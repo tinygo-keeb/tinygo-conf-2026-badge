@@ -1,0 +1,7 @@
+(sym_lib_table
+  (version 7)
+  (lib (name "ST7789_1.3_240x240_LCD_Module")(type "KiCad")(uri "${KIPRJMOD}/lib/st7789/ST7789_1.3_240x240/ST7789_1.3_240x240_LCD_Module.kicad_sym")(options "")(descr ""))
+  (lib (name "sglib")(type "KiCad")(uri "${KIPRJMOD}/lib/sglib.kicad_sym")(options "")(descr ""))
+  (lib (name "kbd")(type "KiCad")(uri "${KIPRJMOD}/lib/kbd/kicad-symbols/kbd.kicad_sym")(options "")(descr ""))
+  (lib (name "adafruit-MAX98357")(type "KiCad")(uri "${KIPRJMOD}/lib/MAX98357/adafruit-MAX98357.kicad_sym")(options "")(descr ""))
+)
