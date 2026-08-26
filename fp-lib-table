@@ -6,4 +6,5 @@
   (lib (name "adafruit-MAX98357")(type "KiCad")(uri "${KIPRJMOD}/lib/MAX98357/adafruit-MAX98357.pretty")(options "")(descr ""))
   (lib (name "espressif")(type "KiCad")(uri "${KIPRJMOD}/lib/espressif/footprints/Espressif.pretty")(options "")(descr ""))
   (lib (name "sparkfun")(type "KiCad")(uri "${KIPRJMOD}/lib/sparkfun/footprints/SparkFun-Connector.pretty")(options "")(descr ""))
+  (lib (name "origin")(type "KiCad")(uri "${KIPRJMOD}/lib/origin.pretty")(options "")(descr ""))
 )
