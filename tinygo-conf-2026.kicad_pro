@@ -502,7 +502,7 @@
       "gencad": "",
       "idf": "",
       "netlist": "",
-      "plot": "tinygo-conf-2026-devkit_test2",
+      "plot": "tinygo-conf-2026-devkit/",
       "pos_files": "",
       "specctra_dsn": "",
       "step": "",

@@ -1,4 +1,4 @@
-27905776434256707
+27911143310212443
 Audio_Module
 Reverb_BTDR-1H
 Digital Reverberation Unit, http://www.belton.co.kr/inc/downfile.php?seq=17&file=pdf (footprint from http://www.uk-electronic.de/PDF/BTDR-1.pdf)
@@ -107618,13 +107618,6 @@ ESP32-S3
 44
 44
 espressif
-ESP32-S3-DevKitC_ZigZag
-ESP32-S3 general-purpose development board, based on ESP32-S3-WROOM-1 or ESP32-S3-WROOM-1U,It has all the ESP32-S3 pins exposed and is easy to connect and use.
-ESP32-S3
-0
-44
-44
-espressif
 ESP32-S3-MINI-1
 ESP32-S3-MINI-1
 esp32-s3
@@ -107927,6 +107920,13 @@ kabuki_f_silk
 0
 gopher
 rust_ferris
+
+
+0
+0
+0
+gopher
+scaled_chip_gopher
 
 
 0
@@ -108255,6 +108255,13 @@ narikin_ojisan
 0
 0
 mylib
+tinygo-conf-badge-qr-code
+
+
+0
+0
+0
+mylib
 名称未設定
 
 
@@ -108263,6 +108270,20 @@ mylib
 0
 mylib
 名称未設定_1
+
+
+0
+0
+0
+origin
+ESP32-S3-DevKitC_ZigZag
+ESP32-S3 general-purpose development board, based on ESP32-S3-WROOM-1 or ESP32-S3-WROOM-1U,It has all the ESP32-S3 pins exposed and is easy to connect and use.
+ESP32-S3
+0
+44
+44
+origin
+tinygo-conf-badge-qr-code
 
 
 0
