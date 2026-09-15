@@ -3826,18 +3826,6 @@
 		(uuid "08e24d92-0f86-4aba-aac9-a4ca0d5c8640")
 	)
 	(junction
-		(at 204.47 105.41)
-		(diameter 0)
-		(color 0 0 0 0)
-		(uuid "0d0e4315-81af-450d-bdc6-dffd7455b3da")
-	)
-	(junction
-		(at 180.34 82.55)
-		(diameter 0)
-		(color 0 0 0 0)
-		(uuid "146acef2-b761-482e-8ea5-4acc89b5d543")
-	)
-	(junction
 		(at 119.38 97.79)
 		(diameter 0)
 		(color 0 0 0 0)
@@ -3850,12 +3838,6 @@
 		(uuid "363197c1-bbe0-4f85-95f8-5efd82def10f")
 	)
 	(junction
-		(at 204.47 82.55)
-		(diameter 0)
-		(color 0 0 0 0)
-		(uuid "50c99db8-9ae5-4448-9170-aa6c1c10a695")
-	)
-	(junction
 		(at 180.34 105.41)
 		(diameter 0)
 		(color 0 0 0 0)
@@ -3866,12 +3848,6 @@
 		(diameter 0)
 		(color 0 0 0 0)
 		(uuid "787f3072-ff4b-489e-bda1-583bd54c991a")
-	)
-	(junction
-		(at 191.77 105.41)
-		(diameter 0)
-		(color 0 0 0 0)
-		(uuid "857aaf9c-e176-4954-b991-a651fdc778fc")
 	)
 	(junction
 		(at 152.4 82.55)
@@ -3902,8 +3878,8 @@
 		(uuid "31a0af64-cead-459b-85d6-8161c09cc77a")
 	)
 	(no_connect
-		(at 240.03 93.98)
-		(uuid "72630a00-604f-4909-ad86-1f941ecad74d")
+		(at 187.96 93.98)
+		(uuid "a14b06d2-d0b6-4fcf-8522-8c2537040c0e")
 	)
 	(wire
 		(pts
@@ -3964,16 +3940,6 @@
 			(type default)
 		)
 		(uuid "0b51e0a6-7801-4a0c-ba19-0a48df039049")
-	)
-	(wire
-		(pts
-			(xy 204.47 82.55) (xy 232.41 82.55)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "10a4984f-a7a2-48b3-9fe0-13404fe57906")
 	)
 	(wire
 		(pts
@@ -4047,16 +4013,6 @@
 	)
 	(wire
 		(pts
-			(xy 204.47 105.41) (xy 232.41 105.41)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "166db4a6-e68f-430e-92f5-0898f0fceb77")
-	)
-	(wire
-		(pts
 			(xy 190.5 130.81) (xy 190.5 138.43)
 		)
 		(stroke
@@ -4074,16 +4030,6 @@
 			(type default)
 		)
 		(uuid "175f618a-19fd-4332-9430-20bfda477504")
-	)
-	(wire
-		(pts
-			(xy 204.47 82.55) (xy 204.47 86.36)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "18c6d0b4-8905-4234-aa7a-cb5e72b93510")
 	)
 	(wire
 		(pts
@@ -4204,16 +4150,6 @@
 			(type default)
 		)
 		(uuid "3a9ca82b-bd60-448e-9872-c3df85ea08e1")
-	)
-	(wire
-		(pts
-			(xy 180.34 82.55) (xy 204.47 82.55)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "3b074dd1-c74b-4666-b55b-62707d2d2963")
 	)
 	(wire
 		(pts
@@ -4507,16 +4443,6 @@
 	)
 	(wire
 		(pts
-			(xy 232.41 105.41) (xy 232.41 101.6)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "69942dcd-72f9-49ef-af78-5d6fb4cc8892")
-	)
-	(wire
-		(pts
 			(xy 231.14 39.37) (xy 238.76 39.37)
 		)
 		(stroke
@@ -4597,16 +4523,6 @@
 	)
 	(wire
 		(pts
-			(xy 232.41 82.55) (xy 232.41 86.36)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "88a792c0-066c-4e96-8de6-6afc33ad6b26")
-	)
-	(wire
-		(pts
 			(xy 74.93 54.61) (xy 83.82 54.61)
 		)
 		(stroke
@@ -4634,16 +4550,6 @@
 			(type default)
 		)
 		(uuid "8c5b024c-e160-4ca0-96bd-0842987b2b0a")
-	)
-	(wire
-		(pts
-			(xy 204.47 105.41) (xy 204.47 101.6)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "8f41bfe3-427b-433c-8e5c-c22ae1303648")
 	)
 	(wire
 		(pts
@@ -4967,16 +4873,6 @@
 	)
 	(wire
 		(pts
-			(xy 187.96 93.98) (xy 196.85 93.98)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "c49327a6-327d-41cb-be2c-e0b3568ac6ac")
-	)
-	(wire
-		(pts
 			(xy 74.93 59.69) (xy 83.82 59.69)
 		)
 		(stroke
@@ -4994,16 +4890,6 @@
 			(type default)
 		)
 		(uuid "c4f074e4-2ae3-47f7-a72d-a6aa67bfe94c")
-	)
-	(wire
-		(pts
-			(xy 191.77 105.41) (xy 204.47 105.41)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "c5dfd267-0b0c-4bf0-bb01-9ffe469eb0b1")
 	)
 	(wire
 		(pts
@@ -5204,16 +5090,6 @@
 			(type default)
 		)
 		(uuid "ecd293bc-349d-40bd-b226-8f74c6113a10")
-	)
-	(wire
-		(pts
-			(xy 212.09 93.98) (xy 224.79 93.98)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "ed6c0b52-e26f-489d-9b62-d1508cf7243b")
 	)
 	(wire
 		(pts
@@ -6471,7 +6347,7 @@
 				)
 			)
 		)
-		(property "Footprint" "origin:ESP32-S3-DevKitC_ZigZag"
+		(property "Footprint" "espressif:ESP32-S3-DevKitC"
 			(at 90.17 40.64 0)
 			(effects
 				(font
@@ -7821,82 +7697,6 @@
 		)
 	)
 	(symbol
-		(lib_id "LED:WS2812B")
-		(at 204.47 93.98 0)
-		(unit 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(fields_autoplaced yes)
-		(uuid "b2a1345b-553f-4e38-b0de-279c51c99c92")
-		(property "Reference" "D3"
-			(at 215.9 87.5598 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Value" "WS2812B"
-			(at 215.9 90.0998 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Footprint" "kbd:YS-SK6812MINI-E"
-			(at 205.74 101.6 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left top)
-				(hide yes)
-			)
-		)
-		(property "Datasheet" "https://cdn-shop.adafruit.com/datasheets/WS2812B.pdf"
-			(at 207.01 103.505 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left top)
-				(hide yes)
-			)
-		)
-		(property "Description" "RGB LED with integrated controller"
-			(at 204.47 93.98 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(pin "2"
-			(uuid "7266049f-030f-4ede-a062-61962411970a")
-		)
-		(pin "1"
-			(uuid "23ea53a4-10e0-4da5-80b7-682acbea1a0f")
-		)
-		(pin "3"
-			(uuid "fe4cb242-67bd-4bc9-80ea-162a1b1609f1")
-		)
-		(pin "4"
-			(uuid "c367a0ca-38cc-4c16-92b6-5f42241f8fee")
-		)
-		(instances
-			(project "tinygo-conf-2026"
-				(path "/29db373d-5a3f-48db-987c-83fa700d9f95"
-					(reference "D3")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
 		(lib_id "power:VCC")
 		(at 261.62 58.42 0)
 		(unit 1)
@@ -8297,82 +8097,6 @@
 			(project "tinygo-conf-2026"
 				(path "/29db373d-5a3f-48db-987c-83fa700d9f95"
 					(reference "#PWR013")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
-		(lib_id "LED:WS2812B")
-		(at 232.41 93.98 0)
-		(unit 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(fields_autoplaced yes)
-		(uuid "c41f7631-15db-46dd-959d-3a36db488070")
-		(property "Reference" "D4"
-			(at 243.84 87.5598 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Value" "WS2812B"
-			(at 243.84 90.0998 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Footprint" "kbd:YS-SK6812MINI-E"
-			(at 233.68 101.6 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left top)
-				(hide yes)
-			)
-		)
-		(property "Datasheet" "https://cdn-shop.adafruit.com/datasheets/WS2812B.pdf"
-			(at 234.95 103.505 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left top)
-				(hide yes)
-			)
-		)
-		(property "Description" "RGB LED with integrated controller"
-			(at 232.41 93.98 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(pin "2"
-			(uuid "beee5b97-3863-429f-b2ca-5bc73b7e01ef")
-		)
-		(pin "1"
-			(uuid "0c3aef58-1fe6-4245-b062-e2c82e4edb08")
-		)
-		(pin "3"
-			(uuid "9f496f24-3084-459e-b1e6-c1ceebba1e83")
-		)
-		(pin "4"
-			(uuid "2d6a3721-5715-43be-a7a5-bb2ffc0842e3")
-		)
-		(instances
-			(project "tinygo-conf-2026"
-				(path "/29db373d-5a3f-48db-987c-83fa700d9f95"
-					(reference "D4")
 					(unit 1)
 				)
 			)
