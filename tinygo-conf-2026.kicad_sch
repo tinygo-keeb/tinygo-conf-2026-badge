@@ -4043,6 +4043,16 @@
 	)
 	(wire
 		(pts
+			(xy 130.81 44.45) (xy 130.81 48.26)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "1d1f8477-3bdd-474d-88f8-514623797d78")
+	)
+	(wire
+		(pts
 			(xy 25.4 58.42) (xy 34.29 58.42)
 		)
 		(stroke
@@ -4683,16 +4693,6 @@
 	)
 	(wire
 		(pts
-			(xy 124.46 44.45) (xy 124.46 46.99)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "9dfd0b74-9576-4bef-b0dc-9475d99a5cf9")
-	)
-	(wire
-		(pts
 			(xy 46.99 48.26) (xy 55.88 48.26)
 		)
 		(stroke
@@ -4733,7 +4733,7 @@
 	)
 	(wire
 		(pts
-			(xy 115.57 92.71) (xy 129.54 92.71)
+			(xy 115.57 82.55) (xy 129.54 82.55)
 		)
 		(stroke
 			(width 0)
@@ -4833,7 +4833,7 @@
 	)
 	(wire
 		(pts
-			(xy 115.57 44.45) (xy 124.46 44.45)
+			(xy 115.57 44.45) (xy 130.81 44.45)
 		)
 		(stroke
 			(width 0)
@@ -5093,7 +5093,7 @@
 	)
 	(wire
 		(pts
-			(xy 115.57 90.17) (xy 129.54 90.17)
+			(xy 69.85 77.47) (xy 83.82 77.47)
 		)
 		(stroke
 			(width 0)
@@ -5123,7 +5123,7 @@
 	)
 	(wire
 		(pts
-			(xy 115.57 82.55) (xy 123.19 82.55)
+			(xy 115.57 87.63) (xy 123.19 87.63)
 		)
 		(stroke
 			(width 0)
@@ -5312,7 +5312,7 @@
 		(uuid "2be16171-d1fa-4528-897c-fcd8dc9fd490")
 	)
 	(label "SCL_AHT21B"
-		(at 129.54 92.71 180)
+		(at 129.54 82.55 180)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -5392,7 +5392,7 @@
 		(uuid "557bc1af-9649-4af6-90fe-2112c2ded191")
 	)
 	(label "LRC"
-		(at 123.19 82.55 180)
+		(at 123.19 87.63 180)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -5552,12 +5552,12 @@
 		(uuid "852bd008-5937-485a-9ad2-3ef23975f718")
 	)
 	(label "SDA_AHT21B"
-		(at 129.54 90.17 180)
+		(at 69.85 77.47 0)
 		(effects
 			(font
 				(size 1.27 1.27)
 			)
-			(justify right bottom)
+			(justify left bottom)
 		)
 		(uuid "85ac07ea-efde-47fb-bbb6-38009b0a7a47")
 	)
@@ -5700,6 +5700,16 @@
 			(justify right bottom)
 		)
 		(uuid "b08cbc9e-4d9a-4ee2-aaf7-ab29ec78ea27")
+	)
+	(label "3V3"
+		(at 261.62 58.42 180)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right bottom)
+		)
+		(uuid "b45ef02f-5ecb-4af6-abdf-2ea50c764bcd")
 	)
 	(label "DIN"
 		(at 123.19 85.09 180)
@@ -7477,7 +7487,7 @@
 	)
 	(symbol
 		(lib_id "power:GND")
-		(at 124.46 46.99 0)
+		(at 130.81 48.26 0)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
@@ -7486,7 +7496,7 @@
 		(fields_autoplaced yes)
 		(uuid "a94c0600-7fd2-4cb6-ac6a-6c322bb6114c")
 		(property "Reference" "#PWR014"
-			(at 124.46 53.34 0)
+			(at 130.81 54.61 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -7495,7 +7505,7 @@
 			)
 		)
 		(property "Value" "GND"
-			(at 124.46 52.07 0)
+			(at 130.81 53.34 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -7503,7 +7513,7 @@
 			)
 		)
 		(property "Footprint" ""
-			(at 124.46 46.99 0)
+			(at 130.81 48.26 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -7512,7 +7522,7 @@
 			)
 		)
 		(property "Datasheet" ""
-			(at 124.46 46.99 0)
+			(at 130.81 48.26 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -7521,7 +7531,7 @@
 			)
 		)
 		(property "Description" "Power symbol creates a global label with name \"GND\" , ground"
-			(at 124.46 46.99 0)
+			(at 130.81 48.26 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -7691,72 +7701,6 @@
 			(project "tinygo-conf-2026"
 				(path "/29db373d-5a3f-48db-987c-83fa700d9f95"
 					(reference "#PWR018")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
-		(lib_id "power:VCC")
-		(at 261.62 58.42 0)
-		(unit 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(fields_autoplaced yes)
-		(uuid "b9fe5ca1-cbff-4aed-86ec-15de91437d49")
-		(property "Reference" "#PWR012"
-			(at 261.62 62.23 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Value" "VCC"
-			(at 261.62 53.34 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Footprint" ""
-			(at 261.62 58.42 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Datasheet" ""
-			(at 261.62 58.42 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Description" "Power symbol creates a global label with name \"VCC\""
-			(at 261.62 58.42 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(pin "1"
-			(uuid "a73e11b7-d30d-4633-93eb-48d1b482c0f8")
-		)
-		(instances
-			(project "tinygo-conf-2026"
-				(path "/29db373d-5a3f-48db-987c-83fa700d9f95"
-					(reference "#PWR012")
 					(unit 1)
 				)
 			)
