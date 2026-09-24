@@ -54,17 +54,21 @@ func (t *IRTransmitter) space(d time.Duration) {
 // SendNEC は NEC フォーマットで address / command を送信する。
 // 8bit アドレスと 8bit コマンドを、それぞれ反転値と組にして送る。
 func (t *IRTransmitter) SendNEC(address, command uint8) {
-	t.SendNEC32(uint32(address)<<24 | uint32(^address)<<16 | uint32(command)<<8 | uint32(^command))
+	t.SendNEC32(uint32(address) | uint32(^address)<<8 | uint32(command)<<16 | uint32(^command)<<24)
 }
 
-// SendNEC32 は 32bit のデータをそのまま NEC フォーマットで送信する (MSB first)。
-// 拡張 NEC (16bit アドレス) を送りたい場合はこちらを使う。
-func (t *IRTransmitter) SendNEC32(data uint32) {
+// SendNEC32 は 32bit のデータを NEC フォーマットで送信する。
+//
+// NEC は LSB first で、code の bit0 から順に送る。ビット配置は
+// tinygo.org/x/drivers/irremote の受信データ (Data.Code) と同じで、
+// bit0-7 がアドレス、bit8-15 がアドレスの反転、bit16-23 がコマンド、
+// bit24-31 がコマンドの反転。受信した Data.Code をそのまま渡せば再送できる。
+func (t *IRTransmitter) SendNEC32(code uint32) {
 	t.mark(9000 * time.Microsecond)
 	t.space(4500 * time.Microsecond)
 	for i := 0; i < 32; i++ {
 		t.mark(562 * time.Microsecond)
-		if data&(1<<(31-i)) != 0 {
+		if code&(1<<i) != 0 {
 			t.space(1687 * time.Microsecond)
 		} else {
 			t.space(562 * time.Microsecond)
