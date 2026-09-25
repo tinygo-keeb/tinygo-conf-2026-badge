@@ -12,6 +12,18 @@ tinygo monitor --target esp32s3-box-3
 
 `make build` で全 example のコンパイル確認、`make flash-<name>` で書き込みができる。
 
+Wi-Fi の example は SSID とパスワードをビルド時に埋め込む。引数か環境変数で指定する。
+
+```sh
+make flash-wifi-server SSID=yourssid PASS=yourpassword
+# 環境変数でも可 (WIFI_SSID / WIFI_PASS、または SSID / PASS)
+export WIFI_SSID=yourssid WIFI_PASS=yourpassword
+make flash-wifi-server
+# 手動なら
+CGO_CFLAGS_ALLOW=-fno-short-enums tinygo flash --target esp32s3-box-3 --size short \
+  -ldflags="-X main.ssid=yourssid -X main.password=yourpassword" ./examples/wifi-server
+```
+
 ## 構成
 
 | パス | 内容 |
@@ -19,12 +31,16 @@ tinygo monitor --target esp32s3-box-3
 | `badge/` | ピン割り当てと各ペリフェラルの初期化ヘルパー |
 | `ws2812s3/` | ESP32-S3 (240MHz) 用 WS2812B ドライバ |
 | `i2s/` | ESP32-S3 の I2S0 + GDMA を使った 16bit ステレオ音声出力ドライバ |
+| `wifi/` | espradio で Wi-Fi に接続するヘルパー (失敗時はリセットして再試行) |
 | `examples/blink` | WS2812B を虹色に点灯 |
 | `examples/display` | ST7789 にカラーバーと文字を表示 |
 | `examples/input` | SW1/SW2 とジョイスティックの状態をシリアル出力 |
 | `examples/aht21b` | 温湿度センサーの値をシリアル出力 |
 | `examples/i2cscan` | Grove / AHT21B の I2C バスをスキャン |
 | `examples/dht20` | Grove につないだ DHT20 (AHT20 互換) の温湿度をシリアル出力 |
+| `examples/wifi-httpget` | Wi-Fi に接続して http://httpbin.org/get を取得 (net/http) |
+| `examples/wifi-server` | Wi-Fi に接続して AHT21B の温湿度を返す HTTP サーバー (httphi) |
+| `examples/wifi-joystick` | ジョイスティックの XY とスイッチの状態をブラウザにリアルタイム表示 |
 | `examples/ir` | 赤外線受信 (NEC) と、ボタン押下で赤外線送信 |
 | `examples/audio` | MAX98357 から音階・メロディ・ビープを鳴らす |
 | `examples/audiotest` | I2S の動作確認用。診断出力を出したあと 1kHz の正弦波を鳴らし続ける |
@@ -99,6 +115,27 @@ tinygo monitor --target esp32s3-box-3
   `Silence()` (badge.ToneGenerator なら `Stop()`) で無音にすること。フォーマットは Philips 標準、
   16bit、2ch、MCLK = fs*256、BCLK = fs*32 (スロット幅 16。`Config.SlotBits` で 32 も可)。
   GDMA はチャネル 0 を使う。
+- **Wi-Fi**: `tinygo.org/x/espradio` (TinyGo 0.41 以降、Espressif のバイナリブロブ + 純 Go の
+  TCP/IP スタック lneto) を使う。espradio の C コードが `-fno-short-enums` を要求するので、
+  ビルド時に環境変数 `CGO_CFLAGS_ALLOW=-fno-short-enums` が必要 (Makefile で設定済み)。
+  SSID/パスワードは `-ldflags="-X main.ssid=... -X main.password=..."` で埋め込む。埋め込まないと
+  example は起動時に `failure: ssid is empty` を繰り返す (このとき Wi-Fi のコードは
+  デッドコードとして落ちるので、バイナリが極端に小さくなる)。HTTP サーバーは espradio 推奨の
+  `httphi` (リクエストごとにヒープを使わない) を使う。`net/http` は接続ごとに約 10kB を
+  ヒープに確保するため、長時間動かすと GC の断片化で止まることがある (espradio の README 参照)。
+  espradio は無線の初期化を一度しかできず、接続に失敗したあと `NetConnect` を呼び直しても
+  `already enabled` で失敗する。`wifi.Connect()` は失敗時に 5 秒待ってチップをソフトリセット
+  (`badge.Reset()`) し、最初からやり直す。モニタを閉じた直後などは AP 側に前のセッションが残って
+  `auth expired` になることがあるが、この再試行でつながる。
+  espradio を import するだけで (使わなくても) 初期化データがリンクされ、フラッシュ約 170KB、
+  RAM 約 160KB が増えるので、Wi-Fi のヘルパーは `badge` ではなく別パッケージ `wifi` に置いている。
+- **espradio の import 位置**: TinyGo はパッケージの init を import パスの辞書順に実行し、
+  コンパイル時に評価できない init (espradio の C 呼び出し) に当たると、それ以降のパッケージの
+  init を実行時に回す。このモジュール (`github.com/sago35/...`) は `github.com/soypat/lneto` や
+  `net/http` より辞書順で前なので、このモジュール内のパッケージから espradio を import すると
+  unicode などのテーブル初期化が実行時に回り、RAM が約 70KB 増える (実測: 115KB → 240KB)。
+  そのため `wifi.Connect()` は espradio を import せず `netlink.Netlinker` を受け取り、
+  `Esplink` の生成は example の main で行う。
 - **MAX98357 の SD ピン**: 回路図では未接続。Adafruit 製モジュールは基板上の 1MΩ でプルアップされ
   Vin=5V なら SD が約 0.45V (ステレオ平均モード) になるが、これで動かない個体があった。
   SD を Vin に直結 (左チャネルのみ) したモジュールで動作確認済み。ファームウェアは L/R に同じ
