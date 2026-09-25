@@ -25,7 +25,7 @@ const (
 // MAX98357 I2S アンプ (U3) + スピーカー (LS1)。
 // GAIN は GND 接続 (12dB)、SD_MODE は未接続 ((L+R)/2 出力)。
 // TinyGo の machine パッケージは ESP32-S3 の I2S を未サポートのため、
-// 現時点ではピン定義のみ。
+// firmware/i2s パッケージでレジスタを直接操作して出力する (NewAudio 参照)。
 const (
 	I2S_BCLK = machine.GPIO45
 	I2S_LRC  = machine.GPIO21
