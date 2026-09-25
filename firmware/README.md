@@ -94,6 +94,10 @@ CGO_CFLAGS_ALLOW=-fno-short-enums tinygo flash --target esp32s3-box-3 --size sho
 - **WS2812B**: `tinygo.org/x/drivers/ws2812` は xtensa では 80/160MHz のみ対応で、
   ESP32-S3 は 240MHz で動作するため使えない。`ws2812s3/` に 240MHz 用の
   タイミングでビットバンギング実装を置いている。
+- **LCD のちらつき**: ディスプレイに直接描くと部分ごとの書き換えが見えてちらつく。
+  `badge.NewFramebuffer(display)` で 1 画面分 (RGB565、約 115KB) のオフスクリーンバッファを
+  作り、そこに描いてから `Display()` で一括転送する (`examples/demo` 参照)。tinyfont や
+  tinydraw の描画先としてそのまま渡せる。
 - **I2C 初期化**: `machine.I2C.Configure` は最後のバスクリアで完了ビットを無限に待つため、
   プルアップのない (浮いた) バスでは止まることがある。また Configure はピン設定を上書きするので
   事前に内部プルアップを有効にしても外れる。`badge.ConfigureI2C()` は同じ手順を内部プルアップ
