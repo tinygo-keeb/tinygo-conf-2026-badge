@@ -24,6 +24,7 @@ tinygo monitor --target esp32s3-box-3
 | `examples/input` | SW1/SW2 とジョイスティックの状態をシリアル出力 |
 | `examples/aht21b` | 温湿度センサーの値をシリアル出力 |
 | `examples/i2cscan` | Grove / AHT21B の I2C バスをスキャン |
+| `examples/dht20` | Grove につないだ DHT20 (AHT20 互換) の温湿度をシリアル出力 |
 | `examples/ir` | 赤外線受信 (NEC) と、ボタン押下で赤外線送信 |
 | `examples/audio` | MAX98357 から音階・メロディ・ビープを鳴らす |
 | `examples/audiotest` | I2S の動作確認用。診断出力を出したあと 1kHz の正弦波を鳴らし続ける |

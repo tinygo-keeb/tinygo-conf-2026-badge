@@ -60,6 +60,10 @@ const (
 )
 
 // Grove 互換 I2C コネクタ (J1): GND / 3V3 / SDA / SCL。I2C0 を使う。
+// J1 は 2.0mm ピッチのピンヘッダで、1 ピン (四角パッド) が GND。
+// Grove ケーブルは黒 (GND)、赤 (VCC)、白 (SDA)、黄 (SCL) の順に挿す。
+// ESP32-S3 は GPIO マトリクスで I2C を任意のピンに出せるので、ケーブルの
+// SDA/SCL の並びが逆のときはここを入れ替えるだけで対応できる。
 const (
 	I2C_SDA = machine.GPIO8
 	I2C_SCL = machine.GPIO9
