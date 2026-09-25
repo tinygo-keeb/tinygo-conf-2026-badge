@@ -24,6 +24,7 @@ func (b Button) Pressed() bool {
 //
 // Read の出力は -1000..1000 に正規化した値で、次の処理を通す。
 //   - センター補正: Calibrate で実測した中立位置を 0 とする
+//   - 可動範囲: 中心から Range カウント倒した位置を 1000 とする
 //   - デッドゾーン: 中心から DeadZone 以内はドリフト防止のため 0 にする
 //   - 飽和: 中心から Saturation 以上倒すと最大値 (半径 1000 の円周上) になる
 //
@@ -36,7 +37,13 @@ type Joystick struct {
 	// センター位置の ADC 生値。Calibrate で更新される。初期値は中点。
 	CenterX, CenterY uint16
 
-	// DeadZone は 0 とみなす半径 (0..1000)。既定 80。
+	// Range は中心からいっぱいまで倒したときの ADC 生値の差分。
+	// 本基板のスティックは可動範囲を絞ってあり、実測で全方向とも
+	// 16000..17000 カウント程度 (examples/joyraw で計測)。既定 16000。
+	Range int
+
+	// DeadZone は 0 とみなす半径 (0..1000)。既定 50。
+	// 静止時のノイズは ±100 カウント (= 約 6) なので十分に余裕がある。
 	DeadZone int
 	// Saturation は最大値に張り付く半径 (0..1000)。既定 850。
 	Saturation int
@@ -55,7 +62,8 @@ func NewJoystick() *Joystick {
 		btn:        Button{Pin: JOY_BTN},
 		CenterX:    32768,
 		CenterY:    32768,
-		DeadZone:   80,
+		Range:      16000,
+		DeadZone:   50,
 		Saturation: 850,
 		// X のポテンショメータは右に倒すと電圧が下がる向きに配線されている (実機で確認)
 		InvertX: true,
@@ -88,23 +96,12 @@ func (j *Joystick) Calibrate(d time.Duration) {
 }
 
 // axis は生値をセンター基準で -1000..1000 に正規化する。
-// センターから両端までの距離は非対称なので、それぞれの側の距離で割る。
-func axis(raw, center uint16, invert bool) int {
-	d := int(raw) - int(center)
-	var v int
-	if d >= 0 {
-		span := 65535 - int(center)
-		if span < 1 {
-			span = 1
-		}
-		v = d * 1000 / span
-	} else {
-		span := int(center)
-		if span < 1 {
-			span = 1
-		}
-		v = d * 1000 / span
+// rng カウント倒した位置を 1000 とし、それ以上は 1000 に張り付く。
+func axis(raw, center uint16, rng int, invert bool) int {
+	if rng < 1 {
+		rng = 1
 	}
+	v := (int(raw) - int(center)) * 1000 / rng
 	if v > 1000 {
 		v = 1000
 	} else if v < -1000 {
@@ -120,8 +117,8 @@ func axis(raw, center uint16, invert bool) int {
 // ボタン状態を返す。出力は半径 1000 の円の内側に収まる。
 func (j *Joystick) Read() (x, y int, pressed bool) {
 	rx, ry := j.Raw()
-	x = axis(rx, j.CenterX, j.InvertX)
-	y = axis(ry, j.CenterY, j.InvertY)
+	x = axis(rx, j.CenterX, j.Range, j.InvertX)
+	y = axis(ry, j.CenterY, j.Range, j.InvertY)
 
 	// 半径方向にデッドゾーンと飽和を掛ける
 	mag := isqrt(x*x + y*y)
