@@ -18,12 +18,15 @@ tinygo monitor --target esp32s3-box-3
 | --- | --- |
 | `badge/` | ピン割り当てと各ペリフェラルの初期化ヘルパー |
 | `ws2812s3/` | ESP32-S3 (240MHz) 用 WS2812B ドライバ |
+| `i2s/` | ESP32-S3 の I2S0 + GDMA を使った 16bit ステレオ音声出力ドライバ |
 | `examples/blink` | WS2812B を虹色に点灯 |
 | `examples/display` | ST7789 にカラーバーと文字を表示 |
 | `examples/input` | SW1/SW2 とジョイスティックの状態をシリアル出力 |
 | `examples/aht21b` | 温湿度センサーの値をシリアル出力 |
 | `examples/i2cscan` | Grove / AHT21B の I2C バスをスキャン |
 | `examples/ir` | 赤外線受信 (NEC) と、ボタン押下で赤外線送信 |
+| `examples/audio` | MAX98357 から音階・メロディ・ビープを鳴らす |
+| `examples/audiotest` | I2S の動作確認用。診断出力を出したあと 1kHz の正弦波を鳴らし続ける |
 | `examples/demo` | 上記をまとめた全機能デモ |
 
 ## ピン割り当て
@@ -38,7 +41,7 @@ tinygo monitor --target esp32s3-box-3
 | | DC | 5 | |
 | | RES | 4 | |
 | | BLK | - | 3V3 直結 |
-| I2S MAX98357 (U3) | BCLK | 45 | TinyGo 未対応 (後述) |
+| I2S MAX98357 (U3) | BCLK | 45 | I2S0 (後述) |
 | | LRC | 21 | |
 | | DIN | 47 | |
 | WS2812B x2 (D1, D2) | DIN | 16 | D1 -> D2 直列 |
@@ -89,4 +92,13 @@ tinygo monitor --target esp32s3-box-3
   その中で `println` を使うと USB シリアル出力が止まることがあるので、割り込み内ではデータを
   保存するだけにしてメインループで出力する (`examples/ir` 参照)。
 - **I2S (MAX98357)**: TinyGo の machine パッケージは ESP32-S3 の I2S を未サポート。
-  ピン定義のみで、オーディオ出力は未実装。
+  `i2s/` にレジスタ直叩きで実装している (ESP-IDF v5.1 の i2s_ll.h / gdma_ll.h / i2s_std.c の
+  手順を移植)。ESP32-S3 の I2S は GDMA 経由でしか送れないため、DMA バッファをリング状につないで
+  連続送信し、`Write` はそのバッファを順に埋める。リングは再生され続けるので、鳴らし終えたら
+  `Silence()` (badge.ToneGenerator なら `Stop()`) で無音にすること。フォーマットは Philips 標準、
+  16bit、2ch、MCLK = fs*256、BCLK = fs*32 (スロット幅 16。`Config.SlotBits` で 32 も可)。
+  GDMA はチャネル 0 を使う。
+- **MAX98357 の SD ピン**: 回路図では未接続。Adafruit 製モジュールは基板上の 1MΩ でプルアップされ
+  Vin=5V なら SD が約 0.45V (ステレオ平均モード) になるが、これで動かない個体があった。
+  SD を Vin に直結 (左チャネルのみ) したモジュールで動作確認済み。ファームウェアは L/R に同じ
+  データを流すのでどちらのモードでも音は同じ。次の基板では SD のプルアップを基板側に持たせたい。
