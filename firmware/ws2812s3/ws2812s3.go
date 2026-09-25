@@ -7,6 +7,7 @@ import (
 	"errors"
 	"image/color"
 	"machine"
+	"runtime/interrupt"
 )
 
 var errUnknownClockSpeed = errors.New("ws2812s3: unsupported CPU clock (240MHz only)")
@@ -45,20 +46,40 @@ func (d Device) WriteByte(c byte) error {
 }
 
 // Write は GRB 順に並んだバイト列をそのまま送信する。
+//
+// フレーム全体を割り込み禁止で送る。バイトごとに割り込みを許可すると、
+// BLE や Wi-Fi の割り込みで 50us 以上の隙間ができたときに WS2812B が
+// フレームの終わりと判定してラッチしてしまい、後続の LED に色が届かない。
+// 2 個なら約 60us、10 個でも約 300us の割り込み禁止で済む。
 func (d Device) Write(buf []byte) (n int, err error) {
+	if _, err := machine.GetCPUFrequency(); err != nil {
+		return 0, err
+	}
+	mask := interrupt.Disable()
+	d.warmup240()
 	for _, c := range buf {
 		if err := d.WriteByte(c); err != nil {
+			interrupt.Restore(mask)
 			return n, err
 		}
 		n++
 	}
+	interrupt.Restore(mask)
 	return n, nil
 }
 
-// WriteColors は色の配列を LED に送信する。
+// WriteColors は色の配列を LED に送信する。フレーム全体を割り込み禁止で送る
+// (理由は Write のコメントを参照)。
 // 呼び出し後は 50us 以上信号線を Low に保つ必要があるが、
 // 通常の描画間隔なら自然に満たされる。
 func (d Device) WriteColors(buf []color.RGBA) error {
+	mask := interrupt.Disable()
+	defer interrupt.Restore(mask)
+	if _, err := machine.GetCPUFrequency(); err != nil {
+		return err
+	}
+	// 送信開始時の命令キャッシュミスで先頭ビットが伸びないよう、先にコードを温める
+	d.warmup240()
 	for _, c := range buf {
 		r, g, b := applyBrightness(c, d.brightness)
 		if err := d.WriteByte(g); err != nil {
