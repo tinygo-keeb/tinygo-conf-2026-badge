@@ -22,6 +22,30 @@ import (
 func (d Device) writeByte240(c byte) {
 	portSet, maskSet := d.Pin.PortMaskSet()
 	portClear, maskClear := d.Pin.PortMaskClear()
+	bitbang240(c, portSet, maskSet, portClear, maskClear)
+}
+
+// warmup240 は bitbang240 の命令列を、ピンに影響しないマスク 0 で 1 バイト分
+// 実行して命令キャッシュに載せる。
+//
+// このコードはフラッシュ上にありキャッシュ経由で実行される。連続送信中は
+// キャッシュに残っているが、BLE や Wi-Fi のスタックが動く合間に一度だけ送る
+// ような使い方では送信開始時にキャッシュミスが起きて先頭のビットの High が
+// 数 us に伸び、先頭の LED が先頭ビットを 1 と読んでしまう (先頭は G なので
+// 緑に固定される)。GPIO の W1TS/W1TC レジスタにマスク 0 を書いても何も
+// 起きないので、これで安全に温められる。
+func (d Device) warmup240() {
+	portSet, _ := d.Pin.PortMaskSet()
+	portClear, _ := d.Pin.PortMaskClear()
+	bitbang240(0, portSet, 0, portClear, 0)
+}
+
+// bitbang240 は 1 バイトを WS2812 のタイミングで送る (CPU 240MHz 用)。
+// warmup240 と writeByte240 が同じコードを共有するように、インライン展開させない
+// (展開されると温めたコピーと本番のコピーが別物になる)。
+//
+//go:noinline
+func bitbang240(c byte, portSet *uint32, maskSet uint32, portClear *uint32, maskClear uint32) {
 	mask := interrupt.Disable()
 	device.AsmFull(`
 		1: // send_bit
