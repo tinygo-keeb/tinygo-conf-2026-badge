@@ -24,6 +24,19 @@ CGO_CFLAGS_ALLOW=-fno-short-enums tinygo flash --target esp32s3-box-3 --size sho
   -ldflags="-X main.ssid=yourssid -X main.password=yourpassword" ./examples/wifi-server
 ```
 
+BLE の example は `make flash-ble-<name>` で書き込む。TinyGo 0.43 以降なら通常のターゲットで
+ビルドされる。それより古い TinyGo では専用ターゲット (`targets/esp32s3-box-3-ble.json`) と
+`-tags espradio` が自動で使われる (Makefile が `tinygo info` の build tags で判定)。
+
+```sh
+make flash-ble-sensor
+# 手動なら (TinyGo 0.43 以降)
+CGO_CFLAGS_ALLOW=-fno-short-enums tinygo flash --target esp32s3-box-3 --size short ./examples/ble-sensor
+# 古い TinyGo なら (firmware/ で実行。リンカスクリプトのパスは firmware/ からの相対)
+CGO_CFLAGS_ALLOW=-fno-short-enums tinygo flash --target ./targets/esp32s3-box-3-ble.json \
+  -tags espradio --size short ./examples/ble-sensor
+```
+
 ## 構成
 
 | パス | 内容 |
@@ -32,6 +45,7 @@ CGO_CFLAGS_ALLOW=-fno-short-enums tinygo flash --target esp32s3-box-3 --size sho
 | `ws2812s3/` | ESP32-S3 (240MHz) 用 WS2812B ドライバ |
 | `i2s/` | ESP32-S3 の I2S0 + GDMA を使った 16bit ステレオ音声出力ドライバ |
 | `wifi/` | espradio で Wi-Fi に接続するヘルパー (失敗時はリセットして再試行) |
+| `targets/` | BLE 用のカスタムターゲット (アップストリーム TinyGo の esp32s3.ld を同梱) |
 | `examples/blink` | WS2812B を虹色に点灯 |
 | `examples/display` | ST7789 にカラーバーと文字を表示 |
 | `examples/input` | SW1/SW2 とジョイスティックの状態をシリアル出力 |
@@ -41,6 +55,9 @@ CGO_CFLAGS_ALLOW=-fno-short-enums tinygo flash --target esp32s3-box-3 --size sho
 | `examples/wifi-httpget` | Wi-Fi に接続して http://httpbin.org/get を取得 (net/http) |
 | `examples/wifi-server` | Wi-Fi に接続して AHT21B の温湿度を返す HTTP サーバー (httphi) |
 | `examples/wifi-joystick` | ジョイスティックの XY とスイッチの状態をブラウザにリアルタイム表示 |
+| `examples/ble-scanner` | BLE で周囲のデバイスをスキャンしてアドレス、RSSI、名前を表示 |
+| `examples/ble-sensor` | BLE ペリフェラル。温湿度 (Environmental Sensing)、WS2812B 2 個の色書き込み、ボタン通知、LED の自動/手動モード。名前と LCD にチップ固有の ID を表示 |
+| `examples/ble-sensor/webble.html` | 上記に Web Bluetooth で接続して操作するページ (Chrome / Edge で開く) |
 | `examples/ir` | 赤外線受信 (NEC) と、ボタン押下で赤外線送信 |
 | `examples/audio` | MAX98357 から音階・メロディ・ビープを鳴らす |
 | `examples/audiotest` | I2S の動作確認用。診断出力を出したあと 1kHz の正弦波を鳴らし続ける |
@@ -133,6 +150,19 @@ CGO_CFLAGS_ALLOW=-fno-short-enums tinygo flash --target esp32s3-box-3 --size sho
   `auth expired` になることがあるが、この再試行でつながる。
   espradio を import するだけで (使わなくても) 初期化データがリンクされ、フラッシュ約 170KB、
   RAM 約 160KB が増えるので、Wi-Fi のヘルパーは `badge` ではなく別パッケージ `wifi` に置いている。
+- **BLE**: `tinygo.org/x/bluetooth` の espradio バックエンド (ビルドタグ `espradio`) を使う。
+  TinyGo 0.43 以降は ESP32 ターゲットに `espradio` タグが標準で付き、ESP32-S3 の BT ROM
+  シンボルもリンカスクリプトに含まれるので、通常のターゲットでビルドできる。
+  それより古い TinyGo (0.42.0-dev など) ではどちらも無く、espradio の BLE ブロブ
+  (libbtdm_app.a) が参照する ROM シンボル (`r_osi_funcs_p` など約 1000 個) でリンクに失敗する。
+  その場合のために、アップストリーム TinyGo (dev ブランチ、2026-09-25 取得) の `esp32s3.ld` を
+  `targets/esp32s3-ble.ld` として同梱し、`targets/esp32s3-box-3-ble.json` (esp32s3-box-3 を継承)
+  から参照している。Makefile は `tinygo info` の build tags に `espradio` があれば通常のターゲット、
+  無ければこのカスタムターゲットと `-tags espradio` を使う。
+  TinyGo のターゲット JSON の `linkerscript` は cwd (firmware/) からの相対パスで解決される。
+- **バッジの識別**: `badge.SerialNumber()` は eFuse の MAC アドレス (チップ固有) の下位 3 バイトを
+  16 進 6 桁にした ID を返す。ble-sensor はアドバタイズ名を `TinyGo Conf 2026 #XXXXXX` にし、
+  同じ ID を LCD に表示するので、ワークショップで複数のバッジが同時に動いていても見分けられる。
 - **espradio の import 位置**: TinyGo はパッケージの init を import パスの辞書順に実行し、
   コンパイル時に評価できない init (espradio の C 呼び出し) に当たると、それ以降のパッケージの
   init を実行時に回す。このモジュール (`github.com/sago35/...`) は `github.com/soypat/lneto` や
