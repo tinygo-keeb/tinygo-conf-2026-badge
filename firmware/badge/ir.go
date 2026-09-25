@@ -78,6 +78,19 @@ func (t *IRTransmitter) SendNEC32(code uint32) {
 	t.carrier(false)
 }
 
+// SendRaw は mark, space, mark, ... の順に並んだパルス長 (マイクロ秒) をそのまま送る。
+// 受信モジュールで記録した任意のプロトコルの信号を再生するのに使う。
+func (t *IRTransmitter) SendRaw(durationsUs []uint16) {
+	for i, d := range durationsUs {
+		if i%2 == 0 {
+			t.mark(time.Duration(d) * time.Microsecond)
+		} else {
+			t.space(time.Duration(d) * time.Microsecond)
+		}
+	}
+	t.carrier(false)
+}
+
 func busyWait(d time.Duration) {
 	start := time.Now()
 	for time.Since(start) < d {

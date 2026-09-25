@@ -45,6 +45,7 @@ CGO_CFLAGS_ALLOW=-fno-short-enums tinygo flash --target ./targets/esp32s3-box-3-
 | `ws2812s3/` | ESP32-S3 (240MHz) 用 WS2812B ドライバ |
 | `i2s/` | ESP32-S3 の I2S0 + GDMA を使った 16bit ステレオ音声出力ドライバ |
 | `wifi/` | espradio で Wi-Fi に接続するヘルパー (失敗時はリセットして再試行) |
+| `flashstore/` | ROM 関数で SPI フラッシュの一部 (0x1F0000 から 64KB) を読み書きする設定保存用パッケージ |
 | `targets/` | BLE 用のカスタムターゲット (アップストリーム TinyGo の esp32s3.ld を同梱) |
 | `examples/blink` | WS2812B を虹色に点灯 |
 | `examples/display` | ST7789 にカラーバーと文字を表示 |
@@ -59,6 +60,7 @@ CGO_CFLAGS_ALLOW=-fno-short-enums tinygo flash --target ./targets/esp32s3-box-3-
 | `examples/ble-sensor` | BLE ペリフェラル。温湿度 (Environmental Sensing)、WS2812B 2 個の色書き込み、ボタン通知、LED の自動/手動モード。名前と LCD にチップ固有の ID を表示 |
 | `examples/ble-sensor/webble.html` | 上記に Web Bluetooth で接続して操作するページ (Chrome / Edge で開く) |
 | `examples/ir` | 赤外線受信 (NEC) と、ボタン押下で赤外線送信 |
+| `examples/irlearn` | リモコンの信号を学習して送信するアプリ。一覧、登録、名前編集、削除。フラッシュに保存 |
 | `examples/audio` | MAX98357 から音階・メロディ・ビープを鳴らす |
 | `examples/audiotest` | I2S の動作確認用。診断出力を出したあと 1kHz の正弦波を鳴らし続ける |
 | `examples/demo` | 上記をまとめた全機能デモ |
@@ -129,6 +131,13 @@ CGO_CFLAGS_ALLOW=-fno-short-enums tinygo flash --target ./targets/esp32s3-box-3-
 - **割り込み内での出力**: 赤外線受信 (irremote) などのコールバックは GPIO 割り込みの中で呼ばれる。
   その中で `println` を使うと USB シリアル出力が止まることがあるので、割り込み内ではデータを
   保存するだけにしてメインループで出力する (`examples/ir` 参照)。
+- **フラッシュへの保存**: TinyGo の machine パッケージには ESP32-S3 用のフラッシュ API が無いので、
+  `flashstore/` は ROM に固定アドレスで存在する `esp_rom_spiflash_read/write/erase_sector/unlock`
+  を CGo から直接呼ぶ (アドレスは ESP-IDF v5.1.2 の esp32s3.rom.ld)。手順は TinyGo の
+  ESP32-C3 用ドライバと同じで、割り込み禁止のまま ROM 関数を呼ぶ。TinyGo のイメージヘッダは
+  フラッシュサイズを 2MB と書くので ROM ドライバは 2MB を超える erase/write を拒否する。そのため
+  保存領域は 2MB 未満の末尾 (0x1F0000 から 64KB) に置く。読み出しもキャッシュ経由ではなく
+  ROM 関数で行う。
 - **I2S (MAX98357)**: TinyGo の machine パッケージは ESP32-S3 の I2S を未サポート。
   `i2s/` にレジスタ直叩きで実装している (ESP-IDF v5.1 の i2s_ll.h / gdma_ll.h / i2s_std.c の
   手順を移植)。ESP32-S3 の I2S は GDMA 経由でしか送れないため、DMA バッファをリング状につないで
