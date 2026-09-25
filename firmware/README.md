@@ -10,9 +10,13 @@ tinygo flash --target esp32s3-box-3 --size short ./examples/blink
 tinygo monitor --target esp32s3-box-3
 ```
 
-`make build` で全 example のコンパイル確認、`make flash-<name>` で書き込みができる。
+`Makefile` の `smoketest` に全 example のビルドコマンドを 1 行ずつそのまま書いてある
+(`make smoketest` で全部ビルドして `out/` に出力する)。書き込みたいときは該当する行を
+コピーして、`build -o ./out/xxx.bin` を `flash` に変えて実行する。
 
-Wi-Fi の example は SSID とパスワードをビルド時に埋め込む。引数か環境変数で指定する。
+Wi-Fi の example は SSID とパスワードをビルド時に埋め込む。Makefile の行は
+`YOUR_SSID` / `YOUR_PASSWORD` のプレースホルダなので、自分のものに書き換えるか、
+環境変数から埋め込む `make flash-wifi-<name>` を使う。
 
 ```sh
 make flash-wifi-server SSID=yourssid PASS=yourpassword
@@ -24,15 +28,14 @@ CGO_CFLAGS_ALLOW=-fno-short-enums tinygo flash --target esp32s3-box-3 --size sho
   -ldflags="-X main.ssid=yourssid -X main.password=yourpassword" ./examples/wifi-server
 ```
 
-BLE の example は `make flash-ble-<name>` で書き込む。TinyGo 0.43 以降なら通常のターゲットで
-ビルドされる。それより古い TinyGo では専用ターゲット (`targets/esp32s3-box-3-ble.json`) と
-`-tags espradio` が自動で使われる (Makefile が `tinygo info` の build tags で判定)。
+BLE の example は TinyGo 0.43 以降なら Makefile の行のとおり通常のターゲットでビルドできる。
+それより古い TinyGo では専用ターゲット (`targets/esp32s3-box-3-ble.json`) と
+`-tags espradio` を指定する (firmware/ で実行。リンカスクリプトのパスは firmware/ からの相対)。
+`-tags bledebug` を足すと bluetooth パッケージのデバッグ出力 (ATT/HCI の処理) がシリアルに出る。
 
 ```sh
-make flash-ble-sensor
-# 手動なら (TinyGo 0.43 以降)
 CGO_CFLAGS_ALLOW=-fno-short-enums tinygo flash --target esp32s3-box-3 --size short ./examples/ble-sensor
-# 古い TinyGo なら (firmware/ で実行。リンカスクリプトのパスは firmware/ からの相対)
+# 古い TinyGo なら
 CGO_CFLAGS_ALLOW=-fno-short-enums tinygo flash --target ./targets/esp32s3-box-3-ble.json \
   -tags espradio --size short ./examples/ble-sensor
 ```
@@ -152,7 +155,7 @@ CGO_CFLAGS_ALLOW=-fno-short-enums tinygo flash --target ./targets/esp32s3-box-3-
   GDMA はチャネル 0 を使う。
 - **Wi-Fi**: `tinygo.org/x/espradio` (TinyGo 0.41 以降、Espressif のバイナリブロブ + 純 Go の
   TCP/IP スタック lneto) を使う。espradio の C コードが `-fno-short-enums` を要求するので、
-  ビルド時に環境変数 `CGO_CFLAGS_ALLOW=-fno-short-enums` が必要 (Makefile で設定済み)。
+  ビルド時に環境変数 `CGO_CFLAGS_ALLOW=-fno-short-enums` が必要 (Makefile の該当行に前置してある)。
   SSID/パスワードは `-ldflags="-X main.ssid=... -X main.password=..."` で埋め込む。埋め込まないと
   example は起動時に `failure: ssid is empty` を繰り返す (このとき Wi-Fi のコードは
   デッドコードとして落ちるので、バイナリが極端に小さくなる)。HTTP サーバーは espradio 推奨の
@@ -171,8 +174,7 @@ CGO_CFLAGS_ALLOW=-fno-short-enums tinygo flash --target ./targets/esp32s3-box-3-
   (libbtdm_app.a) が参照する ROM シンボル (`r_osi_funcs_p` など約 1000 個) でリンクに失敗する。
   その場合のために、アップストリーム TinyGo (dev ブランチ、2026-09-25 取得) の `esp32s3.ld` を
   `targets/esp32s3-ble.ld` として同梱し、`targets/esp32s3-box-3-ble.json` (esp32s3-box-3 を継承)
-  から参照している。Makefile は `tinygo info` の build tags に `espradio` があれば通常のターゲット、
-  無ければこのカスタムターゲットと `-tags espradio` を使う。
+  から参照している。古い TinyGo ではこのカスタムターゲットと `-tags espradio` を指定する。
   TinyGo のターゲット JSON の `linkerscript` は cwd (firmware/) からの相対パスで解決される。
 - **バッジの識別**: `badge.SerialNumber()` は eFuse の MAC アドレス (チップ固有) の下位 3 バイトを
   16 進 6 桁にした ID を返す。ble-sensor はアドバタイズ名を `TinyGo Conf 2026 #XXXXXX` にし、
