@@ -1,67 +1,76 @@
-TARGET ?= esp32s3-box-3
-# BLE 用ターゲット。TinyGo 0.43 以降はターゲットに espradio ビルドタグと
-# ESP32-S3 の BT ROM シンボルが含まれるので通常のターゲットでよい。
-# それより古い TinyGo (0.42.0-dev など) ではどちらも無いため、アップストリームの
-# esp32s3.ld を同梱したカスタムターゲット (targets/) を使う。
-# `tinygo info` の build tags に espradio があるかで自動判定する。
-# リンカスクリプトのパスは firmware/ (make を実行するディレクトリ) からの相対。
-# BLE_DEBUG=1 で bluetooth パッケージのデバッグ出力 (ATT/HCI の処理) を有効にする
-BLE_DEBUG ?=
-BLE_NATIVE := $(shell tinygo info --target $(TARGET) 2>/dev/null | grep -c espradio)
-ifeq ($(BLE_NATIVE),0)
-TARGET_BLE ?= ./targets/esp32s3-box-3-ble.json
-BLE_TAGLIST = espradio
-else
-TARGET_BLE ?= $(TARGET)
-BLE_TAGLIST =
-endif
-ifneq ($(BLE_DEBUG),)
-BLE_TAGLIST += bledebug
-endif
-BLE_TAGS = $(if $(strip $(BLE_TAGLIST)),-tags "$(strip $(BLE_TAGLIST))",)
-EXAMPLES := $(notdir $(wildcard examples/*))
-BLE_EXAMPLES := $(filter ble-%,$(EXAMPLES))
-OTHER_EXAMPLES := $(filter-out ble-%,$(EXAMPLES))
+# 全 example をビルドする (コンパイル確認用)。生成物は out/ に置く。
+#
+# 書き込みたいときは該当する行をコピーして、`build -o ./out/xxx.bin` を `flash` に
+# 変えてシェルで実行する。例:
+#   tinygo flash --target esp32s3-box-3 --size short ./examples/blink
+#
+# Wi-Fi / BLE (espradio) を使うものは CGO_CFLAGS_ALLOW=-fno-short-enums が必要。
+# Wi-Fi の YOUR_SSID / YOUR_PASSWORD は書き込むときに自分のものに書き換える
+# (下の flash-wifi-* を使うと環境変数から埋め込める)。
+# BLE は TinyGo 0.43 以降が前提。古い TinyGo での手順は README を参照。
+smoketest: FORCE
+	mkdir -p out
+	# ---- 基本 ----
+	# WS2812B を虹色に光らせながら、シリアルにカウンタを出力する
+	tinygo build -o ./out/blink.bin         --target esp32s3-box-3 --size short ./examples/blink
+	# ST7789 にカラーバーと文字を表示する
+	tinygo build -o ./out/display.bin       --target esp32s3-box-3 --size short ./examples/display
+	# ボタン (SW1/SW2) とジョイスティックの状態をシリアルに出力する
+	tinygo build -o ./out/input.bin         --target esp32s3-box-3 --size short ./examples/input
+	# ジョイスティックの生値と可動範囲 (min/max) を計測してシリアルに出力する
+	tinygo build -o ./out/joyraw.bin        --target esp32s3-box-3 --size short ./examples/joyraw
+	# バッジの全機能デモ
+	tinygo build -o ./out/demo.bin          --target esp32s3-box-3 --size short ./examples/demo
+	# ---- センサー (I2C) ----
+	# 基板上の AHT21B 温湿度センサーの値をシリアルに出力する
+	tinygo build -o ./out/aht21b.bin        --target esp32s3-box-3 --size short ./examples/aht21b
+	# Grove コネクタにつないだ DHT20 温湿度センサーの値をシリアルに出力する
+	tinygo build -o ./out/dht20.bin         --target esp32s3-box-3 --size short ./examples/dht20
+	# Grove (I2C0) と AHT21B (I2C1) の両方の I2C バスをスキャンする
+	tinygo build -o ./out/i2cscan.bin       --target esp32s3-box-3 --size short ./examples/i2cscan
+	# ---- 音 (I2S, MAX98357) ----
+	# SW1 でメロディ、SW2 で和音、ジョイスティックで音程を変えて鳴らす
+	tinygo build -o ./out/audio.bin         --target esp32s3-box-3 --size short ./examples/audio
+	# I2S の動作確認用 (レジスタダンプ、1kHz サイン波を鳴らし続ける)
+	tinygo build -o ./out/audiotest.bin     --target esp32s3-box-3 --size short ./examples/audiotest
+	# ---- 赤外線 ----
+	# 赤外線の送受信 (NEC フォーマット)
+	tinygo build -o ./out/ir.bin            --target esp32s3-box-3 --size short ./examples/ir
+	# リモコンの信号を学習してフラッシュに保存し、送信するアプリ
+	tinygo build -o ./out/irlearn.bin       --target esp32s3-box-3 --size short ./examples/irlearn
+	# ---- Wi-Fi (espradio) ----
+	# http://httpbin.org/get を定期的に取得してシリアルに出力する
+	CGO_CFLAGS_ALLOW=-fno-short-enums tinygo build -o ./out/wifi-httpget.bin  --target esp32s3-box-3 --size short -ldflags="-X main.ssid=YOUR_SSID -X main.password=YOUR_PASSWORD" ./examples/wifi-httpget
+	# HTTP サーバー。基板上の AHT21B の温湿度を返す
+	CGO_CFLAGS_ALLOW=-fno-short-enums tinygo build -o ./out/wifi-server.bin   --target esp32s3-box-3 --size short -ldflags="-X main.ssid=YOUR_SSID -X main.password=YOUR_PASSWORD" ./examples/wifi-server
+	# HTTP サーバー。ジョイスティックとスイッチの状態をブラウザにリアルタイム表示する
+	CGO_CFLAGS_ALLOW=-fno-short-enums tinygo build -o ./out/wifi-joystick.bin --target esp32s3-box-3 --size short -ldflags="-X main.ssid=YOUR_SSID -X main.password=YOUR_PASSWORD" ./examples/wifi-joystick
+	# ---- BLE (espradio) ----
+	# 周囲の BLE デバイスをスキャンしてシリアルに出力する
+	CGO_CFLAGS_ALLOW=-fno-short-enums tinygo build -o ./out/ble-scanner.bin   --target esp32s3-box-3 --size short ./examples/ble-scanner
+	# BLE ペリフェラル。温湿度の通知と LED 制御 (webble.html から操作)
+	CGO_CFLAGS_ALLOW=-fno-short-enums tinygo build -o ./out/ble-sensor.bin    --target esp32s3-box-3 --size short ./examples/ble-sensor
 
-# espradio (Wi-Fi / BLE) の C コードが要求するフラグを CGo に許可する
-export CGO_CFLAGS_ALLOW = -fno-short-enums
+FORCE:
 
-# Wi-Fi の example 用。次のどちらでも指定できる。
+monitor:
+	tinygo monitor --target esp32s3-box-3
+
+# Wi-Fi の example は SSID とパスワードをビルド時に埋め込む必要があるので、
+# 環境変数から埋め込んで書き込むターゲットを用意している。次のどちらでも指定できる。
 #   make flash-wifi-server SSID=yourssid PASS=yourpassword
 #   export WIFI_SSID=yourssid WIFI_PASS=yourpassword; make flash-wifi-server
-# (環境変数 SSID / PASS でも可)
 SSID ?= $(WIFI_SSID)
 PASS ?= $(WIFI_PASS)
-WIFI_LDFLAGS = -X main.ssid=$(SSID) -X main.password=$(PASS)
 
-.PHONY: all build monitor flash-%
+flash-wifi-httpget: check-ssid
+	CGO_CFLAGS_ALLOW=-fno-short-enums tinygo flash --target esp32s3-box-3 --size short -ldflags="-X main.ssid=$(SSID) -X main.password=$(PASS)" ./examples/wifi-httpget
 
-all: build
+flash-wifi-server: check-ssid
+	CGO_CFLAGS_ALLOW=-fno-short-enums tinygo flash --target esp32s3-box-3 --size short -ldflags="-X main.ssid=$(SSID) -X main.password=$(PASS)" ./examples/wifi-server
 
-# 全 example をビルドして生成物は捨てる (コンパイル確認用)
-build:
-	@for e in $(OTHER_EXAMPLES); do \
-		echo "== $$e"; \
-		tinygo build --target $(TARGET) --size short -o /dev/null ./examples/$$e || exit 1; \
-	done
-	@for e in $(BLE_EXAMPLES); do \
-		echo "== $$e"; \
-		tinygo build --target $(TARGET_BLE) $(BLE_TAGS) --size short -o /dev/null ./examples/$$e || exit 1; \
-	done
+flash-wifi-joystick: check-ssid
+	CGO_CFLAGS_ALLOW=-fno-short-enums tinygo flash --target esp32s3-box-3 --size short -ldflags="-X main.ssid=$(SSID) -X main.password=$(PASS)" ./examples/wifi-joystick
 
-# 例: make flash-wifi-server SSID=yourssid PASS=yourpassword
-flash-wifi-%:
+check-ssid:
 	@test -n "$(SSID)" || { echo "SSID is empty: set SSID/PASS or WIFI_SSID/WIFI_PASS"; exit 1; }
-	tinygo flash --target $(TARGET) --size short -ldflags="$(WIFI_LDFLAGS)" ./examples/wifi-$*
-
-# 例: make flash-ble-sensor
-flash-ble-%:
-	tinygo flash --target $(TARGET_BLE) $(BLE_TAGS) --size short ./examples/ble-$*
-
-# 例: make flash-blink
-flash-%:
-	tinygo flash --target $(TARGET) --size short ./examples/$*
-
-# 例: make monitor
-monitor:
-	tinygo monitor --target $(TARGET)
