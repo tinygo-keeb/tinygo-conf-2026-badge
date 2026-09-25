@@ -2,6 +2,9 @@
 //   - LCD にジョイスティック位置、ボタン状態、温湿度を表示
 //   - ジョイスティックの位置に応じて WS2812B の色が変わる
 //   - SW1 / SW2 で LED の明るさを変える
+//
+// 描画はフレームバッファ (badge.Framebuffer) に行い、1 フレーム分をまとめて
+// LCD に転送する。ディスプレイに直接描くと部分ごとの書き換えが見えてちらつく。
 package main
 
 import (
@@ -24,29 +27,30 @@ var (
 
 func main() {
 	display := badge.NewDisplay()
+	fb := badge.NewFramebuffer(display)
 	leds := badge.NewLEDs()
 	sw1, sw2 := badge.NewButtons()
 	joy := badge.NewJoystick()
+	joy.Calibrate(300 * time.Millisecond)
 	time.Sleep(100 * time.Millisecond)
 	sensor := badge.NewSensor()
 
-	w, h := display.Size()
-	display.FillScreen(black)
-	tinyfont.WriteLine(display, &freesans.Bold12pt7b, 8, 24, "TinyGo Conf 2026", white)
+	w, h := fb.Size()
 
 	// ジョイスティック表示エリア (中央の四角)
 	const padSize = 100
 	padX := (w - padSize) / 2
 	padY := int16(40)
-	display.FillRectangle(padX, padY, padSize, padSize, gray)
 
 	brightness := uint8(32)
 	colors := make([]color.RGBA, badge.WS2812_COUNT)
-	var dotX, dotY int16 = -1, -1
 	lastSensor := time.Time{}
+	sensorText := "reading..."
+	sensorColor := white
 	prevSW1, prevSW2 := false, false
 
 	for {
+		frameStart := time.Now()
 		x, y, btn := joy.Read()
 		p1, p2 := sw1.Pressed(), sw2.Pressed()
 
@@ -70,40 +74,42 @@ func main() {
 		}
 		leds.WriteColors(colors)
 
-		// ジョイスティックの位置をドットで表示
-		nx := padX + int16((x+1000)*(padSize-8)/2000)
-		ny := padY + int16((1000-y)*(padSize-8)/2000)
-		if nx != dotX || ny != dotY {
-			if dotX >= 0 {
-				display.FillRectangle(dotX, dotY, 8, 8, gray)
-			}
-			dotColor := white
-			if btn {
-				dotColor = red
-			}
-			display.FillRectangle(nx, ny, 8, 8, dotColor)
-			dotX, dotY = nx, ny
-		}
-
-		// ボタン状態
-		display.FillRectangle(8, padY+padSize+10, w-16, 20, black)
-		tinyfont.WriteLine(display, &freesans.Regular9pt7b, 8, padY+padSize+26, "SW1:"+onoff(p1)+" SW2:"+onoff(p2)+" JOY:"+onoff(btn), green)
-
-		// 温湿度は 1 秒ごとに更新
+		// 温湿度は 1 秒ごとに読む
 		if time.Since(lastSensor) > time.Second {
 			lastSensor = time.Now()
-			display.FillRectangle(8, h-30, w-16, 24, black)
 			if err := sensor.Read(); err == nil {
-				t := sensor.DeciCelsius()
-				hu := sensor.DeciRelHumidity()
-				tinyfont.WriteLine(display, &freesans.Regular9pt7b, 8, h-12,
-					deci(t)+"C  "+deci(hu)+"%", white)
+				sensorText = deci(sensor.DeciCelsius()) + "C  " + deci(sensor.DeciRelHumidity()) + "%"
+				sensorColor = white
 			} else {
-				tinyfont.WriteLine(display, &freesans.Regular9pt7b, 8, h-12, "sensor error", red)
+				sensorText = "sensor error"
+				sensorColor = red
 			}
 		}
 
-		time.Sleep(30 * time.Millisecond)
+		// 1 フレーム分をフレームバッファに描いてから一括転送
+		fb.FillScreen(black)
+		tinyfont.WriteLine(fb, &freesans.Bold12pt7b, 8, 24, "TinyGo Conf 2026", white)
+		fb.FillRectangle(padX, padY, padSize, padSize, gray)
+		// 中心線
+		fb.FillRectangle(padX+padSize/2, padY, 1, padSize, black)
+		fb.FillRectangle(padX, padY+padSize/2, padSize, 1, black)
+		// ジョイスティックの位置 (8x8 のドット)
+		nx := padX + int16((x+1000)*(padSize-8)/2000)
+		ny := padY + int16((1000-y)*(padSize-8)/2000)
+		dotColor := white
+		if btn {
+			dotColor = red
+		}
+		fb.FillRectangle(nx, ny, 8, 8, dotColor)
+		tinyfont.WriteLine(fb, &freesans.Regular9pt7b, 8, padY+padSize+26,
+			"SW1:"+onoff(p1)+" SW2:"+onoff(p2)+" JOY:"+onoff(btn), green)
+		tinyfont.WriteLine(fb, &freesans.Regular9pt7b, 8, h-12, sensorText, sensorColor)
+		fb.Display()
+
+		// 約 30fps に揃える
+		if d := 33*time.Millisecond - time.Since(frameStart); d > 0 {
+			time.Sleep(d)
+		}
 	}
 }
 
