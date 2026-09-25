@@ -4,7 +4,7 @@
 // 起動直後 (Wi-Fi 接続前) にジョイスティックのセンター位置を実測するので、
 // 起動時はスティックに触らないこと。
 //
-//	/       XY 平面にプロットする HTML ページ (約 32ms 間隔で /input を取得)
+//	/       XY 平面にプロットする HTML ページ (約 66ms 間隔で /input を取得)
 //	/input  {"x":-12,"y":345,"joy":false,"sw1":true,"sw2":false,"dead":true,"sat":true}
 //	        x, y は -1000..1000 (中立 0)。dead, sat はデッドゾーンと飽和の有効/無効
 //	/config?dead=1&sat=0  デッドゾーンと飽和の有効/無効を切り替える (ページのチェックボックス)
@@ -37,7 +37,7 @@ const port uint16 = 80
 
 // デッドゾーンと飽和の既定値 (badge.NewJoystick の値)。オフにするときは 0 と 1000 にする。
 const (
-	defaultDeadZone   = 80
+	defaultDeadZone   = 50
 	defaultSaturation = 850
 )
 
@@ -70,17 +70,29 @@ canvas{background:#222;border:1px solid #555;touch-action:none}
 <p>
 <label><input type="checkbox" id="dead" checked> dead zone</label>
 <label><input type="checkbox" id="sat" checked> saturation</label>
+<label><input type="checkbox" id="keep"> keep trail</label>
+<button id="clear">clear</button>
 </p>
 <p id="v"></p><p id="s"></p>
 <script>
 const c=document.getElementById('c'),g=c.getContext('2d'),W=c.width,H=c.height;
 const trail=[];const MAXTRAIL=60;
+const px=v=>W/2+v*(W/2-8)/1000, py=v=>H/2-v*(H/2-8)/1000;
+// keep trail: 消えない軌跡は別レイヤーに描き足していき、毎フレームまとめて合成する
+const keep=document.getElementById('keep');
+const layer=document.createElement('canvas');layer.width=W;layer.height=H;
+const lg=layer.getContext('2d');
+function addKeep(x,y){
+  if(!keep.checked)return;
+  lg.fillStyle='rgba(255,200,80,0.5)';lg.beginPath();lg.arc(px(x),py(y),2,0,Math.PI*2);lg.fill();
+}
+document.getElementById('clear').onclick=()=>{lg.clearRect(0,0,W,H);trail.length=0;};
 function draw(x,y){
   g.clearRect(0,0,W,H);
   g.strokeStyle='#444';g.lineWidth=1;
   g.beginPath();g.moveTo(W/2,0);g.lineTo(W/2,H);g.moveTo(0,H/2);g.lineTo(W,H/2);g.stroke();
   g.beginPath();g.arc(W/2,H/2,W/2-2,0,Math.PI*2);g.stroke();
-  const px=v=>W/2+v*(W/2-8)/1000, py=v=>H/2-v*(H/2-8)/1000;
+  g.drawImage(layer,0,0);
   for(let i=0;i<trail.length;i++){
     const a=(i+1)/trail.length;g.fillStyle='rgba(80,160,255,'+(a*0.6)+')';
     g.beginPath();g.arc(px(trail[i][0]),py(trail[i][1]),3,0,Math.PI*2);g.fill();
@@ -95,7 +107,7 @@ async function sendConfig(){
   catch(e){document.getElementById('s').textContent='config error: '+e;}
 }
 dead.onchange=sendConfig;sat.onchange=sendConfig;
-const INTERVAL=32; // ms。応答を待ってから次を出すので、遅延時に要求が溜まらない
+const INTERVAL=66; // ms。応答を待ってから次を出すので、遅延時に要求が溜まらない
 let fails=0;
 async function update(){
   const t0=performance.now();
@@ -103,6 +115,7 @@ async function update(){
     const r=await fetch('/input');const j=await r.json();
     if(!synced){dead.checked=j.dead;sat.checked=j.sat;synced=true;}
     trail.push([j.x,j.y]);if(trail.length>MAXTRAIL)trail.shift();
+    addKeep(j.x,j.y);
     draw(j.x,j.y);
     setSw('sw1',j.sw1);setSw('sw2',j.sw2);setSw('joy',j.joy);
     document.getElementById('v').textContent='x='+j.x+' y='+j.y+'  ('+Math.round(performance.now()-t0)+'ms)';

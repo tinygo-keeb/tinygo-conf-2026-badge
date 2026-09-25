@@ -50,6 +50,7 @@ CGO_CFLAGS_ALLOW=-fno-short-enums tinygo flash --target ./targets/esp32s3-box-3-
 | `examples/blink` | WS2812B を虹色に点灯 |
 | `examples/display` | ST7789 にカラーバーと文字を表示 |
 | `examples/input` | SW1/SW2 とジョイスティックの状態をシリアル出力 |
+| `examples/joyraw` | ジョイスティックの生値と可動範囲 (min/max) を計測してシリアル出力 |
 | `examples/aht21b` | 温湿度センサーの値をシリアル出力 |
 | `examples/i2cscan` | Grove / AHT21B の I2C バスをスキャン |
 | `examples/dht20` | Grove につないだ DHT20 (AHT20 互換) の温湿度をシリアル出力 |
@@ -126,6 +127,10 @@ CGO_CFLAGS_ALLOW=-fno-short-enums tinygo flash --target ./targets/esp32s3-box-3-
   書き込みでは NACK 後に未送信データが TX FIFO に残って次のトランザクションがジェネラルコール
   になる (AHT21B はこれに ACK する)。そのため `badge.ProbeI2C()` はレジスタを直接操作して
   アドレスバイトのみを送り、失敗時は `badge.ResetI2C()` で FSM と FIFO をリセットしている。
+- **ジョイスティックの可動範囲**: スティックはハット側で可動範囲を絞ってあり、ADC の生値は中心から
+  ±16000..17000 カウント (全域 0..65535 の約半分) しか動かない。`badge.Joystick` は `Range` (既定 16000)
+  で正規化するので、いっぱい倒すと 1000 に届く。範囲が変わったら `examples/joyraw` で計測して `Range` を直す。
+  静止時のノイズは ±100 カウント程度なので `DeadZone` は 50 (= 800 カウント) にしてある。
 - **USB シリアル**: `print` の出力は改行まで送られない。改行なしで長い処理をすると
   何も表示されないように見えるので、区切りには `println` を使う。
 - **割り込み内での出力**: 赤外線受信 (irremote) などのコールバックは GPIO 割り込みの中で呼ばれる。
