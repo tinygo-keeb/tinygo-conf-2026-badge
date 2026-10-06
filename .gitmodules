@@ -1,15 +1,15 @@
 [submodule "lib/st7789"]
-	path = lib/st7789
+	path = hardware/lib/st7789
 	url = https://github.com/BennyLuca/Kicad_Components_Library.git
 [submodule "lib/kbd"]
-	path = lib/kbd
+	path = hardware/lib/kbd
 	url = https://github.com/foostan/kbd
 [submodule "lib/MAX98357"]
-	path = lib/MAX98357
+	path = hardware/lib/MAX98357
 	url = https://github.com/besi/kicad-adafruit-MAX98357.git
 [submodule "lib/espressif"]
-	path = lib/espressif
+	path = hardware/lib/espressif
 	url = https://github.com/espressif/kicad-libraries.git
 [submodule "lib/sparkfun"]
-	path = lib/sparkfun
+	path = hardware/lib/sparkfun
 	url = https://github.com/sparkfun/SparkFun-KiCad-Libraries.git
