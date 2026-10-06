@@ -340,6 +340,21 @@ func (d *Device) waitBuffer() error {
 	return nil
 }
 
+// Writable は Write がブロックせずに書き込めるフレーム数を返す。
+// DMA が読み終えたバッファ (次に再生される順) の空き容量の合計。
+// ゲームなどで描画の合間に音を補充するときに、待たずに書ける量を知るために使う。
+func (d *Device) Writable() int {
+	if !d.configured {
+		return 0
+	}
+	n := len(d.bufs)
+	free := (d.playing() - d.write + n) % n
+	if free == 0 {
+		return 0
+	}
+	return free*d.cfg.BufferFrames - d.offset/4
+}
+
 // Write は L, R, L, R, ... の順に並んだ 16bit サンプルを送信する。
 // バッファが空くまでブロックするので、再生速度に合わせて進む。
 // バッファ 1 個分に満たない端数は書きかけのまま残り、次の Write で続きから
