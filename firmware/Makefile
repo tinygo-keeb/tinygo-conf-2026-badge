@@ -21,6 +21,8 @@ smoketest: FORCE
 	tinygo build -o ./out/joyraw.bin        --target esp32s3-box-3 --size short ./examples/joyraw
 	# バッジの全機能デモ
 	tinygo build -o ./out/demo.bin          --target esp32s3-box-3 --size short ./examples/demo
+	# 基板上の全デバイス (LCD, LED, ボタン, ジョイスティック, AHT21B, Grove, 赤外線, 音) を一度に動作確認する
+	tinygo build -o ./out/selftest.bin      --target esp32s3-box-3 --size short ./examples/selftest
 	# ---- センサー (I2C) ----
 	# 基板上の AHT21B 温湿度センサーの値をシリアルに出力する
 	tinygo build -o ./out/aht21b.bin        --target esp32s3-box-3 --size short ./examples/aht21b

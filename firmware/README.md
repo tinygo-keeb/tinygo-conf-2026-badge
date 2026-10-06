@@ -68,6 +68,7 @@ CGO_CFLAGS_ALLOW=-fno-short-enums tinygo flash --target ./targets/esp32s3-box-3-
 | `examples/audio` | MAX98357 から音階・メロディ・ビープを鳴らす |
 | `examples/audiotest` | I2S の動作確認用。診断出力を出したあと 1kHz の正弦波を鳴らし続ける |
 | `examples/demo` | 上記をまとめた全機能デモ |
+| `examples/selftest` | 基板上の全デバイスを一度に動作確認するセルフテスト。ボタン、ジョイスティック上下左右、AHT21B、赤外線の自己受信、I2S を自動判定し、すべて済むと ALL OK。LCD、LED、スピーカー、Grove は画面の表示と音で目視確認 |
 
 ## ピン割り当て
 
