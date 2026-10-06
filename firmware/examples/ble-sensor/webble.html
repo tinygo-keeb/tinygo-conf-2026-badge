@@ -1,0 +1,231 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>TinyGo Conf 2026 badge (Web Bluetooth)</title>
+<style>
+:root { color-scheme: dark; }
+body { font-family: sans-serif; margin: 1.5em; background: #111; color: #eee; max-width: 32em; }
+h1 { font-size: 1.3em; }
+button { font-size: 1em; padding: .5em 1.2em; border-radius: .4em; border: 0; background: #2a6df4; color: #fff; cursor: pointer; }
+button:disabled { background: #444; color: #888; cursor: default; }
+.card { background: #1c1c1c; border-radius: .6em; padding: 1em; margin: 1em 0; }
+.v { font-size: 2.4em; font-weight: bold; }
+.u { color: #999; }
+.sw { display: inline-block; margin: .3em .8em .3em 0; padding: .4em 1em; border-radius: .4em; background: #333; color: #888; }
+.sw.on { background: #2a2; color: #fff; }
+label { display: block; margin: .4em 0; }
+input[type=range] { width: 60%; vertical-align: middle; }
+.swatch { display: inline-block; width: 2em; height: 2em; border-radius: .3em; vertical-align: middle; border: 1px solid #555; }
+#led2.hidden { display: none; }
+#log { font-family: monospace; font-size: .85em; color: #aaa; white-space: pre-wrap; max-height: 10em; overflow: auto; }
+</style>
+</head>
+<body>
+<h1>TinyGo Conf 2026 badge</h1>
+<p class="u">デバイス一覧では <code>TinyGo Conf 2026 #XXXXXX</code> の XXXXXX が LCD に表示されている ID のものを選んでください。</p>
+<p>
+<button id="connect">接続</button>
+<button id="disconnect" disabled>切断</button>
+<span id="status" class="u">未接続</span>
+</p>
+
+<div class="card">
+<div>AHT21B</div>
+<div><span id="temp" class="v">--</span><span class="u"> &deg;C</span></div>
+<div><span id="hum" class="v">--</span><span class="u"> %RH</span></div>
+</div>
+
+<div class="card">
+<div>ボタン</div>
+<span id="sw1" class="sw">SW1</span><span id="sw2" class="sw">SW2</span><span id="joy" class="sw">JOY</span>
+</div>
+
+<div class="card">
+<div>LED (WS2812B)</div>
+<label><input type="checkbox" id="auto"> 自動で虹色に光らせる (未接続時は常に自動)</label>
+<label><input type="checkbox" id="same" checked> 2 個を同じ色にする</label>
+<div id="led1">
+<div class="u">LED1</div>
+<label>R <input type="range" id="r1" min="0" max="255" value="0"> <span id="r1v">0</span></label>
+<label>G <input type="range" id="g1" min="0" max="255" value="0"> <span id="g1v">0</span></label>
+<label>B <input type="range" id="b1" min="0" max="255" value="0"> <span id="b1v">0</span></label>
+<span id="swatch1" class="swatch"></span>
+</div>
+<div id="led2">
+<div class="u">LED2</div>
+<label>R <input type="range" id="r2" min="0" max="255" value="0"> <span id="r2v">0</span></label>
+<label>G <input type="range" id="g2" min="0" max="255" value="0"> <span id="g2v">0</span></label>
+<label>B <input type="range" id="b2" min="0" max="255" value="0"> <span id="b2v">0</span></label>
+<span id="swatch2" class="swatch"></span>
+</div>
+<p>
+<button id="off">消灯</button>
+<button id="red">赤</button>
+<button id="green">緑</button>
+<button id="blue">青</button>
+<button id="white">白</button></p>
+</div>
+
+<div class="card"><div>ログ</div><div id="log"></div></div>
+
+<script>
+// ble-sensor (examples/ble-sensor/main.go) が公開している UUID
+const ESS_SERVICE = 0x181A;
+const TEMP_CHAR   = 0x2A6E; // int16、0.01 度単位
+const HUM_CHAR    = 0x2A6F; // uint16、0.01% 単位
+const BADGE_SERVICE = '7a0d0001-2026-4b61-8467-65bad9e00000';
+const LED_CHAR      = '7a0d0002-2026-4b61-8467-65bad9e00000'; // Write、LED1 の R G B + LED2 の R G B の 6 バイト
+const BUTTON_CHAR   = '7a0d0003-2026-4b61-8467-65bad9e00000'; // Notify、bit0 SW1、bit1 SW2、bit2 JOY
+const MODE_CHAR     = '7a0d0004-2026-4b61-8467-65bad9e00000'; // Read/Write、0 = 手動、1 = 自動 (虹色)
+
+const $ = id => document.getElementById(id);
+let device = null, ledChar = null, modeChar = null;
+let ledTimer = null, ledPending = null, ledBusy = false;
+
+function log(msg) {
+  const el = $('log');
+  el.textContent += new Date().toLocaleTimeString() + ' ' + msg + '\n';
+  el.scrollTop = el.scrollHeight;
+}
+function setStatus(s) { $('status').textContent = s; }
+function setSw(id, on) { $(id).className = 'sw' + (on ? ' on' : ''); }
+
+function showTemp(dv) { $('temp').textContent = (dv.getInt16(0, true) / 100).toFixed(2); }
+function showHum(dv)  { $('hum').textContent  = (dv.getUint16(0, true) / 100).toFixed(2); }
+function showButtons(dv) {
+  const b = dv.getUint8(0);
+  setSw('sw1', b & 1); setSw('sw2', b & 2); setSw('joy', b & 4);
+}
+
+async function connect() {
+  if (!navigator.bluetooth) {
+    log('このブラウザは Web Bluetooth に対応していません (Chrome / Edge を使ってください)');
+    return;
+  }
+  try {
+    setStatus('デバイスを選択中...');
+    device = await navigator.bluetooth.requestDevice({
+      filters: [{ namePrefix: 'TinyGo Conf 2026' }, { services: [ESS_SERVICE] }],
+      optionalServices: [ESS_SERVICE, BADGE_SERVICE],
+    });
+    device.addEventListener('gattserverdisconnected', onDisconnected);
+    setStatus('接続中...');
+    const server = await device.gatt.connect();
+    log('接続: ' + device.name);
+
+    const ess = await server.getPrimaryService(ESS_SERVICE);
+    const temp = await ess.getCharacteristic(TEMP_CHAR);
+    const hum = await ess.getCharacteristic(HUM_CHAR);
+    showTemp(await temp.readValue());
+    showHum(await hum.readValue());
+    temp.addEventListener('characteristicvaluechanged', e => showTemp(e.target.value));
+    hum.addEventListener('characteristicvaluechanged', e => showHum(e.target.value));
+    await temp.startNotifications();
+    await hum.startNotifications();
+
+    const badge = await server.getPrimaryService(BADGE_SERVICE);
+    ledChar = await badge.getCharacteristic(LED_CHAR);
+    const button = await badge.getCharacteristic(BUTTON_CHAR);
+    showButtons(await button.readValue());
+    button.addEventListener('characteristicvaluechanged', e => showButtons(e.target.value));
+    await button.startNotifications();
+
+    modeChar = await badge.getCharacteristic(MODE_CHAR);
+    const mode = await modeChar.readValue();
+    $('auto').checked = mode.byteLength >= 1 && mode.getUint8(0) === 1;
+
+    const led = await ledChar.readValue();
+    if (led.byteLength >= 6) {
+      setSliders(1, led.getUint8(0), led.getUint8(1), led.getUint8(2));
+      setSliders(2, led.getUint8(3), led.getUint8(4), led.getUint8(5));
+    } else if (led.byteLength >= 3) {
+      setSliders(1, led.getUint8(0), led.getUint8(1), led.getUint8(2));
+      setSliders(2, led.getUint8(0), led.getUint8(1), led.getUint8(2));
+    }
+
+    setStatus('接続済み: ' + device.name);
+    $('connect').disabled = true;
+    $('disconnect').disabled = false;
+    log('通知を開始しました');
+  } catch (e) {
+    log('エラー: ' + e);
+    setStatus('未接続');
+  }
+}
+
+function onDisconnected() {
+  log('切断されました');
+  setStatus('未接続');
+  ledChar = null; modeChar = null;
+  $('connect').disabled = false;
+  $('disconnect').disabled = true;
+  ['sw1', 'sw2', 'joy'].forEach(id => setSw(id, false));
+}
+
+function disconnect() {
+  if (device && device.gatt.connected) device.gatt.disconnect();
+}
+
+// LED は連続して書かないように、直近の値だけを 1 回ずつ送る。
+// 6 バイト (LED1 の R G B、LED2 の R G B) で 2 個を個別に設定する
+function sendLEDs() {
+  const c1 = colorOf(1), c2 = $('same').checked ? c1 : colorOf(2);
+  ledPending = new Uint8Array([...c1, ...c2]);
+  if (!ledTimer) ledTimer = setTimeout(flushLED, 50);
+  $('auto').checked = false; // 色を書くと基板側も手動に戻る
+}
+async function sendMode() {
+  if (!modeChar) return;
+  try { await modeChar.writeValueWithResponse(new Uint8Array([$('auto').checked ? 1 : 0])); }
+  catch (e) { log('モード書き込みエラー: ' + e); }
+}
+$('auto').addEventListener('change', sendMode);
+async function flushLED() {
+  ledTimer = null;
+  if (!ledChar || !ledPending || ledBusy) { if (ledPending && ledChar) ledTimer = setTimeout(flushLED, 50); return; }
+  const v = ledPending; ledPending = null; ledBusy = true;
+  try {
+    // TinyGo の bluetooth (HCI バックエンド) は Write Command (応答なし) を処理しないので、
+    // 応答ありの Write Request を使う
+    await ledChar.writeValueWithResponse(v);
+  } catch (e) { log('LED 書き込みエラー: ' + e); }
+  ledBusy = false;
+  if (ledPending) ledTimer = setTimeout(flushLED, 50);
+}
+
+function colorOf(n) {
+  return [+$('r' + n).value, +$('g' + n).value, +$('b' + n).value];
+}
+function updateSwatch(n) {
+  const [r, g, b] = colorOf(n);
+  $('r' + n + 'v').textContent = r; $('g' + n + 'v').textContent = g; $('b' + n + 'v').textContent = b;
+  $('swatch' + n).style.background = `rgb(${r},${g},${b})`;
+}
+function setSliders(n, r, g, b) {
+  $('r' + n).value = r; $('g' + n).value = g; $('b' + n).value = b;
+  updateSwatch(n);
+}
+for (const n of [1, 2]) {
+  ['r', 'g', 'b'].forEach(c => $(c + n).addEventListener('input', () => {
+    updateSwatch(n);
+    if (n === 1 && $('same').checked) setSliders(2, ...colorOf(1));
+    sendLEDs();
+  }));
+}
+$('same').addEventListener('change', () => {
+  $('led2').className = $('same').checked ? 'hidden' : '';
+  if ($('same').checked) { setSliders(2, ...colorOf(1)); sendLEDs(); }
+});
+const presets = { off: [0, 0, 0], red: [255, 0, 0], green: [0, 255, 0], blue: [0, 0, 255], white: [255, 255, 255] };
+for (const [id, c] of Object.entries(presets)) {
+  $(id).addEventListener('click', () => { setSliders(1, ...c); setSliders(2, ...c); sendLEDs(); });
+}
+$('connect').addEventListener('click', connect);
+$('disconnect').addEventListener('click', disconnect);
+$('led2').className = 'hidden';
+updateSwatch(1); updateSwatch(2);
+</script>
+</body>
+</html>

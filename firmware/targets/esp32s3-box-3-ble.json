@@ -1,0 +1,4 @@
+{
+	"inherits": ["esp32s3-box-3"],
+	"linkerscript": "targets/esp32s3-ble.ld"
+}

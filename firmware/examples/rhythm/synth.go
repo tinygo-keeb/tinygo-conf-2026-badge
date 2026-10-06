@@ -1,0 +1,258 @@
+package main
+
+import (
+	"time"
+
+	"github.com/sago35/tinygo-conf-2026-badge/firmware/i2s"
+)
+
+// 音声の設定。DMA バッファは 128 フレーム (8ms) x 6 個 = 48ms のリング。
+// 描画が 1 回止まっても途切れない長さで、かつ遅延 (約 40ms) が気にならない程度にしてある。
+const (
+	sampleRate = 16000
+	bufFrames  = 128
+	bufCount   = 6
+)
+
+// sineTable は 1 周期を 256 分割した正弦波 (振幅 32767)。
+var sineTable [256]int16
+
+func init() {
+	// math パッケージを避けて、回転行列で 1 周期分を生成する (badge/audio.go と同じ)
+	const (
+		cosStep = 0.99969881869620424996 // cos(2π/256)
+		sinStep = 0.02454122852291228803 // sin(2π/256)
+	)
+	x, y := 1.0, 0.0
+	for i := range sineTable {
+		sineTable[i] = int16(y * 32767)
+		x, y = x*cosStep-y*sinStep, x*sinStep+y*cosStep
+	}
+}
+
+// decayFactor は時定数 tau で指数減衰させるための 1 サンプルあたりの係数 (/65536)。
+func decayFactor(tau time.Duration) int64 {
+	samples := tau.Seconds() * sampleRate
+	return int64(65536 * (1 - 1/samples))
+}
+
+// voice は減衰する正弦波 1 音。鳴らし始めは短いアタックで立ち上げる
+// (振幅が急に変わるとクリック音になるため)。
+type voice struct {
+	phase, step uint32
+	amp         int64 // 現在の振幅 (出力単位 x 256)
+	peak        int64
+	attack      int64 // アタック中の 1 サンプルあたりの増分。0 なら減衰中
+	decay       int64
+	sweep       int64  // 周波数を下げていく係数 (/65536)。0 なら一定
+	minStep     uint32 // sweep の下限
+}
+
+const attackSamples = 64 // 4ms
+
+func (v *voice) trigger(freq uint32, peak int32, decay int64) {
+	v.step = uint32(uint64(freq) << 32 / sampleRate)
+	v.peak = int64(peak) << 8
+	v.attack = (v.peak - v.amp) / attackSamples
+	if v.attack <= 0 {
+		v.attack = 1
+	}
+	v.decay = decay
+}
+
+func (v *voice) next() int32 {
+	if v.attack > 0 {
+		v.amp += v.attack
+		if v.amp >= v.peak {
+			v.amp = v.peak
+			v.attack = 0
+		}
+	} else {
+		v.amp = v.amp * v.decay >> 16
+	}
+	if v.amp == 0 {
+		return 0
+	}
+	s := int32(int64(sineTable[v.phase>>24]) * (v.amp >> 8) >> 15)
+	v.phase += v.step
+	if v.sweep != 0 && v.step > v.minStep {
+		v.step = uint32(int64(v.step) * v.sweep >> 16)
+	}
+	return s
+}
+
+// 各パートの音量 (出力の振幅)。MAX98357 は GAIN=12dB なので全部足しても
+// 8000 程度に収める。
+const (
+	melodyLevel = 2600
+	bassLevel   = 2200
+	kickLevel   = 3200
+	hatLevel    = 500
+	sfxLevel    = 1400
+)
+
+var (
+	melodyDecay = decayFactor(220 * time.Millisecond)
+	bassDecay   = decayFactor(300 * time.Millisecond)
+	kickDecay   = decayFactor(90 * time.Millisecond)
+	hatDecay    = decayFactor(15 * time.Millisecond)
+	sfxDecay    = decayFactor(40 * time.Millisecond)
+)
+
+// synth は曲 (song.go の steps) を再生し、効果音を重ねる。
+// render は audioLoop の goroutine からだけ呼ばれる。
+type synth struct {
+	mel, bass, kick, sfx voice
+	hat                  int64 // ハイハット (ノイズ) の振幅 x 256
+	lfsr                 uint32
+
+	steps   []step
+	playing bool
+	pos     int // 曲の先頭からのサンプル位置
+	next    int // 次に鳴らすステップ
+
+	// 曲の開始を頼まれたら audioLoop が songStart を決める。
+	startReq  bool
+	songStart time.Time // サンプル 0 がスピーカーから出る時刻
+
+	sfxReq uint32 // 0 以外なら次の render で鳴らす効果音の周波数
+}
+
+func newSynth() *synth {
+	s := &synth{lfsr: 0xACE1}
+	s.kick.sweep = 65536 - 56 // 約 80ms で 150Hz から 50Hz まで下がる
+	s.kick.minStep = uint32(uint64(45) << 32 / sampleRate)
+	return s
+}
+
+// start は曲を先頭から再生する。実際に音が出る時刻は songStart に入る。
+func (s *synth) start(steps []step) {
+	s.steps = steps
+	s.pos = 0
+	s.next = 0
+	s.startReq = true
+	s.playing = false
+}
+
+// stop は曲を止める (鳴っている音は自然に減衰する)。
+func (s *synth) stop() {
+	s.playing = false
+	s.startReq = false
+}
+
+// started は曲の開始時刻が決まっていれば true。
+func (s *synth) started() bool {
+	return s.playing
+}
+
+// startSilent は音を出さずに曲の時刻だけを始める (I2S が使えないとき用)。
+func (s *synth) startSilent() {
+	s.startReq = false
+	s.playing = true
+	s.songStart = time.Now()
+}
+
+// clock は曲の先頭からの経過時間 (スピーカーから出ている位置) を返す。
+func (s *synth) clock() time.Duration {
+	return time.Since(s.songStart)
+}
+
+// at は時刻 t を曲の先頭からの経過時間に変換する。
+func (s *synth) at(t time.Time) time.Duration {
+	return t.Sub(s.songStart)
+}
+
+// beep は効果音を鳴らす (曲とは別の声部)。
+func (s *synth) beep(freq uint32) {
+	s.sfxReq = freq
+}
+
+const samplesPerStep = sampleRate * stepMs / 1000
+
+// sync は書き込み直前に呼び、まだ再生されていないフレーム数 queued から
+// 曲の時刻とスピーカーの時刻を合わせる。
+func (s *synth) sync(queued int) {
+	now := time.Now()
+	queuedTime := time.Duration(queued) * time.Second / sampleRate
+	if s.startReq {
+		s.startReq = false
+		s.playing = true
+		s.songStart = now.Add(queuedTime)
+		return
+	}
+	if !s.playing {
+		return
+	}
+	// 描画などで長く止まってリングを 1 周以上取りこぼすと、音が曲の時刻より
+	// 遅れる。その場合は遅れた分だけ曲を先に進めて合わせる。
+	heard := s.pos - queued
+	expected := int(now.Sub(s.songStart) * sampleRate / time.Second)
+	if lag := expected - heard; lag > 2*bufFrames {
+		s.pos += lag
+		for s.next < len(s.steps) && s.next*samplesPerStep < s.pos {
+			s.next++
+		}
+	}
+}
+
+// render は buf (L, R, ...) を埋める。
+func (s *synth) render(buf []int16) {
+	if f := s.sfxReq; f != 0 {
+		s.sfxReq = 0
+		s.sfx.trigger(f, sfxLevel, sfxDecay)
+	}
+	for i := 0; i < len(buf); i += 2 {
+		if s.playing {
+			if s.next < len(s.steps) && s.pos == s.next*samplesPerStep {
+				s.trigger(s.steps[s.next])
+				s.next++
+			}
+			s.pos++
+		}
+		v := s.mel.next() + s.bass.next() + s.kick.next() + s.sfx.next()
+		if s.hat > 0 {
+			// 16bit の LFSR でノイズを作る
+			bit := (s.lfsr ^ s.lfsr>>2 ^ s.lfsr>>3 ^ s.lfsr>>5) & 1
+			s.lfsr = s.lfsr>>1 | bit<<15
+			n := int32(s.lfsr&0xffff) - 0x8000
+			v += int32(int64(n) * (s.hat >> 8) >> 15)
+			s.hat = s.hat * hatDecay >> 16
+		}
+		if v > 32767 {
+			v = 32767
+		} else if v < -32768 {
+			v = -32768
+		}
+		buf[i] = int16(v)
+		buf[i+1] = int16(v)
+	}
+}
+
+func (s *synth) trigger(st step) {
+	if st.melody != 0 {
+		s.mel.trigger(st.melody, melodyLevel, melodyDecay)
+	}
+	if st.bass != 0 {
+		s.bass.trigger(st.bass, bassLevel, bassDecay)
+	}
+	if st.kick {
+		s.kick.trigger(150, kickLevel, kickDecay)
+	}
+	if st.hat {
+		s.hat = hatLevel << 8
+	}
+}
+
+// audioLoop は DMA のリングに空きができるたびに音を補充する。
+// ブロックしないので、メインループ (描画) と交互に動く。
+func audioLoop(dev *i2s.Device, s *synth) {
+	buf := make([]int16, bufFrames*bufCount*2)
+	for {
+		if n := dev.Writable(); n > 0 {
+			s.sync(bufFrames*bufCount - n)
+			s.render(buf[:2*n])
+			dev.Write(buf[:2*n])
+		}
+		time.Sleep(2 * time.Millisecond)
+	}
+}

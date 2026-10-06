@@ -1,0 +1,101 @@
+// MAX98357 (I2S) からスピーカーに音を出す。
+//   - 起動時に上昇音階を鳴らす
+//   - SW1 でメロディ、SW2 で和音を鳴らす (押すたびに C, G, Am, F と進む)
+//   - ジョイスティックのボタンを押している間、X 軸の位置に応じた高さの音を出す
+//
+// 波形の確認やトラブルシュートには examples/audiotest を使う。
+package main
+
+import (
+	"time"
+
+	"github.com/sago35/tinygo-conf-2026-badge/firmware/badge"
+)
+
+// 音量 (0..255)。MAX98357 は GAIN=12dB なので大きくすると音割れする。
+const volume = 32
+
+// 和音の音量。複数の音を同時に鳴らすとスピーカーの非線形性による
+// 相互変調ひずみが目立つので、単音より下げる。
+const chordVolume = volume / 2
+
+// メロディ (周波数 Hz, 長さ ms)
+var melody = [][2]uint32{
+	{523, 150}, {587, 150}, {659, 150}, {698, 150},
+	{784, 150}, {880, 150}, {988, 150}, {1047, 300},
+}
+
+// 和音進行 C, G, Am, F。SW2 を押すたびに順に鳴らす。
+//
+// 音の高さは C を基準にした純正律で決める (C=1, D=9/8, E=5/4, F=4/3,
+// G=3/2, A=5/3, B=15/8)。平均律だと長 3 度が純正より約 14 セント広く、
+// 差音のうなりで濁って聞こえるため。この比率なら C (4:5:6)、G (5:6:8)、
+// Am (12:15:20)、F (3:4:5) がすべて整数比になる。
+const c6 = 1046.5 // 基準の C6 (Hz)
+
+func note(num, den float64) uint32 {
+	return uint32(c6*num/den + 0.5)
+}
+
+var chords = []struct {
+	name  string
+	notes []uint32
+}{
+	{"C", []uint32{note(1, 1), note(5, 4), note(3, 2)}},   // C6 E6 G6
+	{"G", []uint32{note(15, 16), note(9, 8), note(3, 2)}}, // B5 D6 G6
+	{"Am", []uint32{note(1, 1), note(5, 4), note(5, 3)}},  // C6 E6 A6
+	{"F", []uint32{note(1, 1), note(4, 3), note(5, 3)}},   // C6 F6 A6
+}
+
+func main() {
+	sw1, sw2 := badge.NewButtons()
+	joy := badge.NewJoystick()
+
+	audio, err := badge.NewAudio()
+	if err != nil {
+		println("audio init:", err.Error())
+		select {}
+	}
+	tone := badge.NewToneGenerator(audio)
+	println("audio ready")
+
+	for _, n := range []uint32{262, 330, 392, 523} {
+		tone.Play(n, 120, volume)
+	}
+	tone.Stop()
+
+	prev1, prev2, prevJoy := false, false, false
+	chordIdx := 0
+	for {
+		p1, p2 := sw1.Pressed(), sw2.Pressed()
+		if p1 && !prev1 {
+			println("melody")
+			for _, n := range melody {
+				tone.Play(n[0], int(n[1]), volume)
+				tone.Rest(20)
+			}
+			tone.Stop()
+		}
+		if p2 && !prev2 {
+			c := chords[chordIdx]
+			chordIdx = (chordIdx + 1) % len(chords)
+			println("chord", c.name)
+			tone.PlayChord(c.notes, 600, chordVolume)
+			tone.Stop()
+		}
+		prev1, prev2 = p1, p2
+
+		pressed := joy.Pressed()
+		if pressed {
+			x, _, _ := joy.Read()
+			freq := uint32(440 + (x+1000)*440/2000) // 440..880Hz
+			tone.Hold(freq, 30, volume)
+		} else if prevJoy {
+			tone.Stop()
+		}
+		prevJoy = pressed
+		if !pressed {
+			time.Sleep(10 * time.Millisecond)
+		}
+	}
+}
