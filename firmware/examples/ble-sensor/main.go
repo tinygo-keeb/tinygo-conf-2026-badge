@@ -17,11 +17,14 @@
 // BLE が接続されていない間は LED を blink と同じ虹色で自動的に光らせる。
 // 接続中は Mode で切り替える (接続直後は手動)。LED に色を書き込むと手動に戻る。
 //
-//	make flash-ble-sensor
-//	make flash-ble-sensor BLE_DEBUG=1   (ATT/HCI の処理をシリアルに出すデバッグビルド)
+//	CGO_CFLAGS_ALLOW=-fno-short-enums tinygo flash --target esp32s3-box-3 --size short ./examples/ble-sensor
+//
+// -tags bledebug を足すと ATT/HCI の処理をシリアルに出すデバッグビルドになる。
+// TinyGo 0.43 より古い場合は firmware/README.md の BLE の手順を参照。
 //
 // 同じディレクトリの webble.html を Chrome / Edge で開くと、Web Bluetooth で
-// 接続して温湿度とボタンの表示、LED の色の変更ができる。
+// 接続して温湿度とボタンの表示、LED の色の変更ができる。webble.html は
+// https://conf.tinygo-keeb.org/2026/conf2026badge/ でも公開している。
 package main
 
 import (

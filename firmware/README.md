@@ -62,7 +62,7 @@ CGO_CFLAGS_ALLOW=-fno-short-enums tinygo flash --target ./targets/esp32s3-box-3-
 | `examples/wifi-joystick` | ジョイスティックの XY とスイッチの状態をブラウザにリアルタイム表示 |
 | `examples/ble-scanner` | BLE で周囲のデバイスをスキャンしてアドレス、RSSI、名前を表示 |
 | `examples/ble-sensor` | BLE ペリフェラル。温湿度 (Environmental Sensing)、WS2812B 2 個の色書き込み、ボタン通知、LED の自動/手動モード。名前と LCD にチップ固有の ID を表示 |
-| `examples/ble-sensor/webble.html` | 上記に Web Bluetooth で接続して操作するページ (Chrome / Edge で開く) |
+| `examples/ble-sensor/webble.html` | 上記に Web Bluetooth で接続して操作するページ (Chrome / Edge で開く)。https://conf.tinygo-keeb.org/2026/conf2026badge/ で公開している |
 | `examples/ir` | 赤外線受信 (NEC) と、ボタン押下で赤外線送信 |
 | `examples/irlearn` | リモコンの信号を学習して送信するアプリ。一覧、登録、名前編集、削除。フラッシュに保存 |
 | `examples/audio` | MAX98357 から音階・メロディ・ビープを鳴らす |

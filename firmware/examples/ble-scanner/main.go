@@ -1,7 +1,9 @@
 // BLE で周囲のデバイスをスキャンし、アドレス、RSSI、名前をシリアルに出力する。
 // 同じアドレスは 1 回だけ表示する (RSSI の更新は表示しない)。
 //
-//	make flash-ble-scanner
+//	CGO_CFLAGS_ALLOW=-fno-short-enums tinygo flash --target esp32s3-box-3 --size short ./examples/ble-scanner
+//
+// TinyGo 0.43 より古い場合は firmware/README.md の BLE の手順を参照。
 package main
 
 import (
