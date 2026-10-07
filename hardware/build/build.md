@@ -8,6 +8,61 @@
 
 組み立てには以下の部品が必要になります。
 
+- ESP32 S3 Devkit
+
+https://akizukidenshi.com/catalog/g/g131148/
+
+- ジョイスティック
+
+https://akizukidenshi.com/catalog/g/g115951/
+
+- ST7789液晶
+
+https://akizukidenshi.com/catalog/g/g131019/
+
+- プルアップ抵抗
+
+https://akizukidenshi.com/catalog/g/g116332/
+
+- キースイッチ 2つ
+
+https://shop.yushakobo.jp/collections/all-switches
+
+- キーキャップ 2つ
+
+https://shop.yushakobo.jp/collections/keycaps?sort_by=created-descending&filter.v.availability=1&filter.v.price.gte=&filter.v.price.lte=
+
+- キーソケット 2つ
+
+https://shop.yushakobo.jp/products/a01ps?variant=37665172521121
+
+- MAX98357A
+
+https://amzn.asia/d/054giKgU
+
+- RGB LED
+
+https://akizukidenshi.com/catalog/g/g115478/
+
+- 赤外線受信モジュール
+
+https://akizukidenshi.com/catalog/g/g131157/
+
+- 赤外線LED
+
+https://akizukidenshi.com/catalog/g/g112612/
+
+- 温湿度センサー AHT21B
+
+https://akizukidenshi.com/catalog/g/g130222/
+
+- ピンソケット 20p 2つ
+
+https://akizukidenshi.com/catalog/g/g103077/
+
+- ピンソケット 2p 2つ
+
+https://akizukidenshi.com/catalog/g/g110097/
 
 ### 組み立て
 
