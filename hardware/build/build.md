@@ -20,7 +20,7 @@ https://akizukidenshi.com/catalog/g/g115951/
 
 https://akizukidenshi.com/catalog/g/g131019/
 
-- プルアップ抵抗
+- 電流制限抵抗 1つ
 
 https://akizukidenshi.com/catalog/g/g116332/
 
@@ -40,7 +40,7 @@ https://shop.yushakobo.jp/products/a01ps?variant=37665172521121
 
 https://amzn.asia/d/054giKgU
 
-- RGB LED
+- RGB LED（5個入りのうち2個使用します
 
 https://akizukidenshi.com/catalog/g/g115478/
 
