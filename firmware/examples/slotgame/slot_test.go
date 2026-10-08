@@ -74,10 +74,13 @@ func TestJudge(t *testing.T) {
 	}{
 		{symSeven, symSeven, symSeven, 100},
 		{symBar, symBar, symBar, 50},
+		{symTinyGo, symTinyGo, symTinyGo, 25},
 		{symBell, symBell, symBell, 15},
 		{symCherry, symCherry, symCherry, 10}, // 左チェリーの 2 は加算しない
 		{symGrape, symGrape, symGrape, 8},
 		{symCherry, symBell, symGrape, 2},
+		{symCherry, symTinyGo, symTinyGo, 2},
+		{symTinyGo, symTinyGo, symBar, 0},
 		{symGrape, symCherry, symCherry, 0},
 		{symSeven, symSeven, symBar, 0},
 	}
@@ -124,28 +127,74 @@ func TestStopAlignment(t *testing.T) {
 	}
 }
 
-// 1周の間のどこかで押せば 7 を中段に止められる（目押しできる）。
-// 7 を狙える押下タイミングは 1周あたり 4 フレーム以上ある。
-func TestAimSeven(t *testing.T) {
-	for i := range strips {
-		ok := 0
-		probe := reel{strip: strips[i]}
-		for frames := 1; frames <= probe.total()/spinSpeed; frames++ {
-			r := reel{strip: strips[i]}
-			r.start()
-			for f := 0; f < frames; f++ {
-				r.update()
+// 7 と TinyGoロゴは、1周あたり4フレーム以上のタイミングで中段に目押しできる。
+func TestAimSymbols(t *testing.T) {
+	for name, symbol := range map[string]uint8{"seven": symSeven, "tinygo": symTinyGo} {
+		t.Run(name, func(t *testing.T) {
+			for i := range strips {
+				ok := 0
+				probe := reel{strip: strips[i]}
+				for frames := 1; frames <= probe.total()/spinSpeed; frames++ {
+					r := reel{strip: strips[i]}
+					r.start()
+					for f := 0; f < frames; f++ {
+						r.update()
+					}
+					r.requestStop()
+					for r.update() {
+					}
+					if r.center() == symbol {
+						ok++
+					}
+				}
+				if ok < 4 {
+					t.Errorf("reel %d: only %d frames hit %s", i, ok, name)
+				}
 			}
-			r.requestStop()
-			for r.update() {
+		})
+	}
+}
+
+// SW1でTinyGoロゴを3つ止めると25クレジット増え、画面内に描画される。
+func TestTinyGoBonus(t *testing.T) {
+	for name, lay := range layouts {
+		t.Run(name, func(t *testing.T) {
+			scr := newFakeScreen(lay.screenW)
+			g := newGame(scr, lay)
+			g.oneButton = true
+			now := time.Unix(0, 0)
+			g.step([3]bool{true}, now)
+			now = now.Add(stopLockout)
+			for i := range g.reels {
+				r := &g.reels[i]
+				index := -1
+				for j, symbol := range r.strip {
+					if symbol == symTinyGo {
+						index = j
+						break
+					}
+				}
+				if index < 0 {
+					t.Fatalf("reel %d has no TinyGo logo", i)
+				}
+				// 目押しに成功する境界へ進めて、次のリールを止める。
+				r.offset = ((1 - index + len(r.strip)) % len(r.strip)) * symH
+				g.step([3]bool{true}, now)
+				now = now.Add(frameTime)
+				if r.spinning || r.center() != symTinyGo {
+					t.Fatalf("reel %d did not stop on the TinyGo logo", i)
+				}
 			}
-			if r.center() == symSeven {
-				ok++
+			if g.state != stateIdle || g.credit != startCredit-bet+25 {
+				t.Fatalf("TinyGo bonus: state=%d credit=%d", g.state, g.credit)
 			}
-		}
-		if ok < 4 {
-			t.Errorf("reel %d: only %d frames hit seven", i, ok)
-		}
+			if scr.errs != 0 {
+				t.Fatalf("%d draw calls outside the screen", scr.errs)
+			}
+			if *preview {
+				writePNG(t, "preview_tinygo_"+name+".png", scr.img)
+			}
+		})
 	}
 }
 

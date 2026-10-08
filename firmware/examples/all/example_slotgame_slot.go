@@ -82,13 +82,14 @@ const (
 	slotgame_symBell  // 見た目は茶色の Gopher（img/Gogophercolor.png）
 	slotgame_symGrape // 見た目は青い Gopher（img/gopher.svg）
 	slotgame_symCherry
+	slotgame_symTinyGo
 	slotgame_numSymbols
 )
 
 var slotgame_strips = [3][]uint8{
-	{slotgame_symSeven, slotgame_symGrape, slotgame_symCherry, slotgame_symBell, slotgame_symGrape, slotgame_symBar, slotgame_symCherry, slotgame_symGrape, slotgame_symBell, slotgame_symGrape, slotgame_symCherry, slotgame_symBell},
-	{slotgame_symSeven, slotgame_symBell, slotgame_symGrape, slotgame_symBar, slotgame_symGrape, slotgame_symBell, slotgame_symCherry, slotgame_symGrape, slotgame_symBell, slotgame_symGrape, slotgame_symBar, slotgame_symGrape},
-	{slotgame_symSeven, slotgame_symGrape, slotgame_symBell, slotgame_symGrape, slotgame_symBar, slotgame_symBell, slotgame_symGrape, slotgame_symCherry, slotgame_symBell, slotgame_symGrape, slotgame_symBar, slotgame_symGrape},
+	{slotgame_symSeven, slotgame_symGrape, slotgame_symCherry, slotgame_symBell, slotgame_symGrape, slotgame_symBar, slotgame_symCherry, slotgame_symGrape, slotgame_symBell, slotgame_symGrape, slotgame_symCherry, slotgame_symBell, slotgame_symTinyGo},
+	{slotgame_symSeven, slotgame_symBell, slotgame_symGrape, slotgame_symBar, slotgame_symGrape, slotgame_symBell, slotgame_symCherry, slotgame_symGrape, slotgame_symBell, slotgame_symGrape, slotgame_symBar, slotgame_symGrape, slotgame_symTinyGo},
+	{slotgame_symSeven, slotgame_symGrape, slotgame_symBell, slotgame_symGrape, slotgame_symBar, slotgame_symBell, slotgame_symGrape, slotgame_symCherry, slotgame_symBell, slotgame_symGrape, slotgame_symBar, slotgame_symGrape, slotgame_symTinyGo},
 }
 
 // 色
@@ -180,13 +181,15 @@ func (c slotgame_canvas) textCentered(font tinyfont.Fonter, cx, baseline int, s 
 	tinyfont.WriteLine(c, font, int16(cx-int(w)/2), int16(baseline), s, col)
 }
 
-// Gopher のスプライト。tools/gensprite で作る（形式は [幅, 高さ] + RGBA）。
+// 図柄のスプライト。tools/gensprite で作る（形式は [幅, 高さ] + RGBA）。
 // string で埋め込むと TinyGo では flash に置かれ、RAM を使わない。
 var (
 	//go:embed assets/slotgame/img/gopher_blue.rgba
 	slotgame_gopherBlue string
 	//go:embed assets/slotgame/img/gopher_brown.rgba
 	slotgame_gopherBrown string
+	//go:embed assets/slotgame/img/tinygo.rgba
+	slotgame_tinygoLogo string
 )
 
 // sprite はスプライトを中心 x=cx、上端 y=top に、コマ地の色と合成して描く。
@@ -256,6 +259,8 @@ func slotgame_drawSymbol(c slotgame_canvas, sym uint8) {
 		c.sprite(42, 3, slotgame_gopherBrown)
 	case slotgame_symGrape:
 		c.sprite(42, 3, slotgame_gopherBlue)
+	case slotgame_symTinyGo:
+		c.sprite(42, 3, slotgame_tinygoLogo)
 	case slotgame_symCherry:
 		c.line(30, 28, 46, 7, 1, slotgame_colGreen)
 		c.line(54, 26, 46, 7, 1, slotgame_colGreen)
@@ -349,6 +354,8 @@ func slotgame_judge(l, c, r uint8) (int, string) {
 		return 100, "BIG BONUS!! +100"
 	case l == slotgame_symBar && c == slotgame_symBar && r == slotgame_symBar:
 		return 50, "BAR BAR BAR! +50"
+	case l == slotgame_symTinyGo && c == slotgame_symTinyGo && r == slotgame_symTinyGo:
+		return 25, "TINYGO!! +25"
 	case l == slotgame_symBell && c == slotgame_symBell && r == slotgame_symBell:
 		return 15, "BROWN GOPHER +15"
 	case l == slotgame_symCherry && c == slotgame_symCherry && r == slotgame_symCherry:

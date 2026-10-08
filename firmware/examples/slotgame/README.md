@@ -25,10 +25,13 @@ TinyGo Conference 2026 バッジ（ESP32-S3、ST7789 240×240）に移植した
 | --- | --- |
 | 7 × 3 | 100 |
 | BAR × 3 | 50 |
+| TinyGoロゴ × 3 | 25 |
 | 茶色のGopher × 3 | 15 |
 | チェリー × 3 | 10 |
 | 青いGopher × 3 | 8 |
 | 左リールがチェリー | 2 |
+
+TinyGoロゴは各リールに1個ずつ入っています。
 
 最初に当てはまる役だけを払い出し、残りが3クレジット未満ならGAME OVERです。
 クレジットはRAMに保持するため、電源を切ったり `all` の選択画面へ戻ったりすると
@@ -51,12 +54,22 @@ tinygo flash --target esp32s3-box-3 --size short ./examples/slotgame
 
 ```sh
 make check-slotgame
-go test ./examples/slotgame -run TestPreview -preview -preview-dir /tmp/slotgame-preview
+go test ./examples/slotgame -run 'TestPreview|TestTinyGoBonus' -preview -preview-dir /tmp/slotgame-preview
 ```
 
 `slot.go` はハードウェアに依存せず、配当・停止位置・ボタンの押下・ゲーム進行・
-描画範囲をホストのGoで検証できます。描画用RAMは図柄5枚とリール1本分の約56KBで、
+描画範囲をホストのGoで検証できます。描画用RAMは図柄6枚とリール1本分の約63KBで、
 全画面のフレームバッファは確保しません。
+
+TinyGoロゴの元画像は `img/tinygo.png`、組み込み用の画像は `img/tinygo.rgba` です。
+元画像を変更した場合は、次のコマンドで高さ44pxのスプライトを生成します。
+
+```sh
+cd examples/slotgame
+GO111MODULE=off go run ./tools/gensprite -h 44 -o img/tinygo.rgba img/tinygo.png
+cd ../..
+go generate ./examples/all
+```
 
 ## 移植元・画像のクレジット
 
@@ -67,3 +80,6 @@ go test ./examples/slotgame -run TestPreview -preview -preview-dir /tmp/slotgame
 
 The Go gopher was designed by [Renée French](https://reneefrench.blogspot.com/),
 licensed under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/).
+
+TinyGoロゴには[指定された画像](https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSPeG0euLXxf-9uQ4XR_4dmq32-PiGb-mflkWEAVzMg3Q&s=10)
+を使用し、縦横比を保って52×44pxに縮小しています。

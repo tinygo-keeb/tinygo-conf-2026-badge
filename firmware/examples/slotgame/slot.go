@@ -78,13 +78,14 @@ const (
 	symBell  // 見た目は茶色の Gopher（img/Gogophercolor.png）
 	symGrape // 見た目は青い Gopher（img/gopher.svg）
 	symCherry
+	symTinyGo
 	numSymbols
 )
 
 var strips = [3][]uint8{
-	{symSeven, symGrape, symCherry, symBell, symGrape, symBar, symCherry, symGrape, symBell, symGrape, symCherry, symBell},
-	{symSeven, symBell, symGrape, symBar, symGrape, symBell, symCherry, symGrape, symBell, symGrape, symBar, symGrape},
-	{symSeven, symGrape, symBell, symGrape, symBar, symBell, symGrape, symCherry, symBell, symGrape, symBar, symGrape},
+	{symSeven, symGrape, symCherry, symBell, symGrape, symBar, symCherry, symGrape, symBell, symGrape, symCherry, symBell, symTinyGo},
+	{symSeven, symBell, symGrape, symBar, symGrape, symBell, symCherry, symGrape, symBell, symGrape, symBar, symGrape, symTinyGo},
+	{symSeven, symGrape, symBell, symGrape, symBar, symBell, symGrape, symCherry, symBell, symGrape, symBar, symGrape, symTinyGo},
 }
 
 // 色
@@ -176,13 +177,15 @@ func (c canvas) textCentered(font tinyfont.Fonter, cx, baseline int, s string, c
 	tinyfont.WriteLine(c, font, int16(cx-int(w)/2), int16(baseline), s, col)
 }
 
-// Gopher のスプライト。tools/gensprite で作る（形式は [幅, 高さ] + RGBA）。
+// 図柄のスプライト。tools/gensprite で作る（形式は [幅, 高さ] + RGBA）。
 // string で埋め込むと TinyGo では flash に置かれ、RAM を使わない。
 var (
 	//go:embed img/gopher_blue.rgba
 	gopherBlue string
 	//go:embed img/gopher_brown.rgba
 	gopherBrown string
+	//go:embed img/tinygo.rgba
+	tinygoLogo string
 )
 
 // sprite はスプライトを中心 x=cx、上端 y=top に、コマ地の色と合成して描く。
@@ -252,6 +255,8 @@ func drawSymbol(c canvas, sym uint8) {
 		c.sprite(42, 3, gopherBrown)
 	case symGrape:
 		c.sprite(42, 3, gopherBlue)
+	case symTinyGo:
+		c.sprite(42, 3, tinygoLogo)
 	case symCherry:
 		c.line(30, 28, 46, 7, 1, colGreen)
 		c.line(54, 26, 46, 7, 1, colGreen)
@@ -345,6 +350,8 @@ func judge(l, c, r uint8) (int, string) {
 		return 100, "BIG BONUS!! +100"
 	case l == symBar && c == symBar && r == symBar:
 		return 50, "BAR BAR BAR! +50"
+	case l == symTinyGo && c == symTinyGo && r == symTinyGo:
+		return 25, "TINYGO!! +25"
 	case l == symBell && c == symBell && r == symBell:
 		return 15, "BROWN GOPHER +15"
 	case l == symCherry && c == symCherry && r == symCherry:
