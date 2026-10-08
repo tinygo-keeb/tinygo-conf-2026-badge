@@ -11,6 +11,8 @@
 smoketest: FORCE
 	mkdir -p out
 	# ---- 基本 ----
+	# 全 example の統合ランチャー。ロゴ、ジョイスティックの選択画面、実行中は左で選択画面に戻る
+	CGO_CFLAGS_ALLOW=-fno-short-enums tinygo build -o ./out/all.bin --target esp32s3-box-3 --size short -ldflags="-X main.ssid=YOUR_SSID -X main.password=YOUR_PASSWORD" ./examples/all
 	# WS2812B を虹色に光らせながら、シリアルにカウンタを出力する
 	tinygo build -o ./out/blink.bin         --target esp32s3-box-3 --size short ./examples/blink
 	# ST7789 にカラーバーと文字を表示する
@@ -25,6 +27,8 @@ smoketest: FORCE
 	tinygo build -o ./out/selftest.bin      --target esp32s3-box-3 --size short ./examples/selftest
 	# 音ゲー。降ってくるノーツに合わせてジョイスティックの左、上か下、右と SW2、SW1 を押す
 	tinygo build -o ./out/rhythm.bin        --target esp32s3-box-3 --size short ./examples/rhythm
+	# 3 リールの目押しスロット。SW1 で開始し、左/中央/右の順に止める
+	tinygo build -o ./out/slotgame.bin      --target esp32s3-box-3 --size short ./examples/slotgame
 	# ---- センサー (I2C) ----
 	# 基板上の AHT21B 温湿度センサーの値をシリアルに出力する
 	tinygo build -o ./out/aht21b.bin        --target esp32s3-box-3 --size short ./examples/aht21b
@@ -66,6 +70,29 @@ monitor:
 #   export WIFI_SSID=yourssid WIFI_PASS=yourpassword; make flash-wifi-server
 SSID ?= $(WIFI_SSID)
 PASS ?= $(WIFI_PASS)
+
+.PHONY: build-all flash-all check-all build-slotgame flash-slotgame check-slotgame
+
+build-all:
+	mkdir -p out
+	CGO_CFLAGS_ALLOW=-fno-short-enums tinygo build -o ./out/all.bin --target esp32s3-box-3 --size short -ldflags="-X main.ssid=$(SSID) -X main.password=$(PASS)" ./examples/all
+
+flash-all:
+	CGO_CFLAGS_ALLOW=-fno-short-enums tinygo flash --target esp32s3-box-3 --size short -ldflags="-X main.ssid=$(SSID) -X main.password=$(PASS)" ./examples/all
+
+check-all:
+	GO111MODULE=off go test ./examples/all/navigation.go ./examples/all/navigation_test.go
+	cd examples/all && GO111MODULE=off go run generate.go -check
+
+build-slotgame:
+	mkdir -p out
+	tinygo build -o ./out/slotgame.bin --target esp32s3-box-3 --size short ./examples/slotgame
+
+flash-slotgame:
+	tinygo flash --target esp32s3-box-3 --size short ./examples/slotgame
+
+check-slotgame:
+	go test ./examples/slotgame
 
 flash-wifi-httpget: check-ssid
 	CGO_CFLAGS_ALLOW=-fno-short-enums tinygo flash --target esp32s3-box-3 --size short -ldflags="-X main.ssid=$(SSID) -X main.password=$(PASS)" ./examples/wifi-httpget
