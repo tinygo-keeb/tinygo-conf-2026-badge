@@ -58,4 +58,4 @@ The `tinygo-conf-2026-devkit/` directory contains the complete two-layer board o
 
 ## Assembly
 
-See the [build guide](build/build.md) for the parts list and illustrated instructions. The guide is in Japanese.
+See the [build guide](build/build.en.md) for the parts list and illustrated instructions.

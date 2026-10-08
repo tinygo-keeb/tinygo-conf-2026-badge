@@ -19,14 +19,14 @@ Use [`selftest`](firmware/examples/selftest) to check all onboard devices.
 
 ## Assembly
 
-See the [build guide](hardware/build/build.md) for the parts list and illustrated assembly steps. The build guide is in Japanese.
+See the [build guide](hardware/build/build.en.md) for the parts list and illustrated assembly steps.
 
 ## Documentation and files
 
 | Path | Description |
 | --- | --- |
 | [hardware/README.en.md](hardware/README.en.md) | Board design, KiCad setup, and manufacturing files |
-| [hardware/build/build.md](hardware/build/build.md) | Parts list and illustrated assembly guide (Japanese) |
+| [hardware/build/build.en.md](hardware/build/build.en.md) | Parts list and illustrated assembly guide |
 | [hardware/tinygo-conf-2026.kicad_pro](hardware/tinygo-conf-2026.kicad_pro) | KiCad project; the schematic and PCB layout are in the same directory |
 | [firmware/README.en.md](firmware/README.en.md) | Build and flashing instructions, examples, pin assignments, and implementation notes |
 | [firmware/Makefile](firmware/Makefile) | Example build checks and Wi-Fi example flash targets |
@@ -41,7 +41,7 @@ Use KiCad 9.0 or later. Some KiCad libraries are Git submodules; initialize them
 git submodule update --init --recursive
 ```
 
-Open the [KiCad project](hardware/tinygo-conf-2026.kicad_pro) and follow the [build guide](hardware/build/build.md) to assemble the badge.
+Open the [KiCad project](hardware/tinygo-conf-2026.kicad_pro) and follow the [build guide](hardware/build/build.en.md) to assemble the badge.
 
 ### Firmware
 
