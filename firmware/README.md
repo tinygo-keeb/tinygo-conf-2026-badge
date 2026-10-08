@@ -46,7 +46,7 @@ CGO_CFLAGS_ALLOW=-fno-short-enums tinygo flash --target ./targets/esp32s3-box-3-
 
 全サンプルを選択して実行するには `make flash-all` を使う。
 `examples/all` は起動時にロゴを表示し、SW1で選択画面、Joystick上下で選択、
-SW1またはJoystick押し込みで起動する。実行中にJoystick左で選択画面へ戻り、
+SW1またはJoystick押し込みで起動する。実行中はSW1＋SW2を1秒同時長押しして選択画面へ戻り、
 選択画面でJoystick左に倒すとTOPへ戻る。
 Wi-Fi設定や統合版での入力の違いは [examples/all/README.md](examples/all/README.md) を参照。
 
@@ -59,7 +59,7 @@ Wi-Fi設定や統合版での入力の違いは [examples/all/README.md](example
 | `flashstore/` | ROM 関数で SPI フラッシュの一部 (0x1F0000 から 64KB) を読み書きする設定保存用パッケージ |
 | `targets/` | BLE 用のカスタムターゲット (アップストリーム TinyGo の esp32s3.ld を同梱) |
 | `examples/blink` | WS2812B を虹色に点灯 |
-| `examples/all` | 全20サンプルの統合ランチャー。ロゴ画面、Joystickで選択、実行中は左で選択画面へ戻る |
+| `examples/all` | 全20サンプルの統合ランチャー。ロゴ画面、Joystickで選択、実行中はSW1＋SW2を1秒同時長押しで選択画面へ戻る |
 | `examples/display` | ST7789 にカラーバーと文字を表示 |
 | `examples/input` | SW1/SW2 とジョイスティックの状態をシリアル出力 |
 | `examples/joyraw` | ジョイスティックの生値と可動範囲 (min/max) を計測してシリアル出力 |

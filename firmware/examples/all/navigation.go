@@ -9,12 +9,35 @@ const (
 	buttonDebounce   = 25 * time.Millisecond
 	menuRepeatFirst  = 400 * time.Millisecond
 	menuRepeatNext   = 120 * time.Millisecond
+	menuReturnHold   = time.Second
 	menuReturnMagic  = uint32(0x414c4c00) // "ALL" followed by the selected index.
 )
 
 type buttonTransition struct {
 	raw, stable bool
 	changedAt   time.Time
+}
+
+type menuReturnGesture struct {
+	startedAt time.Time
+	fired     bool
+}
+
+// Require both switches continuously for one second. Ordinary single presses,
+// brief chords and joystick operations never trigger a return.
+func (g *menuReturnGesture) update(now time.Time, sw1, sw2 bool) bool {
+	if !sw1 || !sw2 {
+		g.startedAt, g.fired = time.Time{}, false
+		return false
+	}
+	if g.startedAt.IsZero() {
+		g.startedAt = now
+	}
+	if !g.fired && now.Sub(g.startedAt) >= menuReturnHold {
+		g.fired = true
+		return true
+	}
+	return false
 }
 
 func (b *buttonTransition) pressed(now time.Time, raw bool) bool {
@@ -62,13 +85,12 @@ func navigationFromMenuReturn(marker uint32, count int) navigation {
 // update returns whether the screen changed and whether to launch an example.
 // Sampling both buttons on every screen prevents a held SW1 from entering the
 // menu and launching the first example on the same press.
-func (n *navigation) update(now time.Time, x, y int, sw1, joy bool, count int) (changed, launch bool) {
+func (n *navigation) update(now time.Time, x, y int, sw1, sw2, joy bool, count int) (changed, launch bool) {
 	enter := n.sw1.pressed(now, sw1)
 	start := n.joy.pressed(now, joy)
 	if n.waitForNeutral {
-		// A held LEFT from the running example must not immediately leave
-		// the restored menu. Also consume held buttons until their release.
-		if x > -directionRelease && x < directionRelease && y > -directionRelease && y < directionRelease && !sw1 && !joy && !n.sw1.stable && !n.joy.stable {
+		// Consume held controls from the running example until all are released.
+		if x > -directionRelease && x < directionRelease && y > -directionRelease && y < directionRelease && !sw1 && !sw2 && !joy && !n.sw1.stable && !n.joy.stable {
 			n.waitForNeutral = false
 		}
 		return false, false

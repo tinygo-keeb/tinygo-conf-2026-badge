@@ -6,7 +6,6 @@ package main
 import (
 	_ "embed"
 	"image/color"
-	"strconv"
 	"time"
 
 	"github.com/sago35/tinygo-conf-2026-badge/firmware/badge"
@@ -31,57 +30,26 @@ type program struct {
 	hint string
 }
 
-var (
-	launcherBlack = color.RGBA{0, 0, 0, 255}
-	launcherWhite = color.RGBA{255, 255, 255, 255}
-	launcherGray  = color.RGBA{150, 150, 150, 255}
-	launcherBlue  = color.RGBA{24, 64, 110, 255}
-)
-
 func main() {
 	nav := navigationFromMenuReturn(takeMenuReturn(), len(programs))
 	joy := badge.NewJoystick()
-	sw1, _ := badge.NewButtons()
+	sw1, sw2 := badge.NewButtons()
 	display := badge.NewDisplay()
-	if nav.menu {
-		drawMenu(display, &nav)
-	} else {
-		showLogo(display)
-	}
-	// A return-to-menu reset can finish while LEFT is still held. Wait for
-	// neutral before measuring the center, so LEFT never becomes the center.
-	var centeredAt time.Time
-	for {
-		x, y, _ := joy.Read()
-		if x > -directionRelease && x < directionRelease && y > -directionRelease && y < directionRelease {
-			if centeredAt.IsZero() {
-				centeredAt = time.Now()
-			}
-			if time.Since(centeredAt) >= 100*time.Millisecond {
-				break
-			}
-		} else {
-			centeredAt = time.Time{}
-		}
-		time.Sleep(10 * time.Millisecond)
-	}
-	joy.Calibrate(300 * time.Millisecond)
-
-	index := chooseProgram(display, joy, sw1, nav)
+	index := chooseProgram(display, joy, sw1, sw2, nav)
 	selected := programs[index]
 	showProgram(display, selected)
-	println("all: starting", selected.name, "(joystick LEFT: menu)")
+	println("all: starting", selected.name, "(hold SW1+SW2 for 1s: menu)")
 
 	// Reset on return so no old goroutine, DMA buffer, IR interrupt or radio
 	// stack survives into the next example. This also works during long sleeps
 	// and blocking HTTP/BLE operations in the original examples.
-	go watchMenu(joy, index)
+	go watchMenu(sw1, sw2, index)
 	if selected.wifi && ssid == "" {
 		display.FillScreen(launcherBlack)
 		launcherText(display, 50, "Wi-Fi SSID is not set", launcherWhite)
 		launcherText(display, 85, "Build with SSID/PASS", launcherWhite)
 		launcherText(display, 130, "See examples/all/README.md", launcherGray)
-		launcherText(display, 210, "LEFT: MENU", launcherWhite)
+		launcherText(display, 210, "SW1+SW2 1s: MENU", launcherWhite)
 		select {}
 	}
 	selected.run()
@@ -109,14 +77,31 @@ func showLogo(display *st7789.Device) {
 	}
 }
 
-func chooseProgram(display *st7789.Device, joy *badge.Joystick, sw1 badge.Button, nav navigation) int {
+func chooseProgram(display *st7789.Device, joy *badge.Joystick, sw1, sw2 badge.Button, nav navigation) int {
+	menu := menuView{screen: display}
+	names := make([]string, len(programs))
+	for i := range programs {
+		names[i] = programs[i].name
+	}
+	drawMenu := func() {
+		if err := menu.draw(names, nav.selected, nav.first); err != nil {
+			println("all: menu display:", err.Error())
+		}
+	}
+	if nav.menu {
+		drawMenu()
+	} else {
+		showLogo(display)
+	}
+	calibrateJoystick(joy)
 	for {
 		x, y, pressed := joy.Read()
-		changed, launch := nav.update(time.Now(), x, y, sw1.Pressed(), pressed, len(programs))
+		changed, launch := nav.update(time.Now(), x, y, sw1.Pressed(), sw2.Pressed(), pressed, len(programs))
 		if changed {
 			if nav.menu {
-				drawMenu(display, &nav)
+				drawMenu()
 			} else {
+				menu.visible = false
 				showLogo(display)
 			}
 		}
@@ -124,18 +109,39 @@ func chooseProgram(display *st7789.Device, joy *badge.Joystick, sw1 badge.Button
 			// Don't pass the launch press or a tilted stick to an example's
 			// controls or startup calibration. Left can cancel this wait.
 			launcherText(display, 215, "Release buttons and stick", launcherWhite)
-			if waitForRelease(joy, sw1) {
+			if waitForRelease(joy, sw1, sw2) {
 				return nav.selected
 			}
 			nav.menu = false
+			menu.visible = false
 			showLogo(display)
 		}
 		time.Sleep(10 * time.Millisecond)
 	}
 }
 
-func waitForRelease(joy *badge.Joystick, sw1 badge.Button) bool {
-	sw2 := badge.Button{Pin: badge.BUTTON2}
+func calibrateJoystick(joy *badge.Joystick) {
+	// A return-to-menu reset can finish while the stick is tilted. Wait for
+	// neutral before calibration so a held direction never becomes the center.
+	var centeredAt time.Time
+	for {
+		x, y, _ := joy.Read()
+		if x > -directionRelease && x < directionRelease && y > -directionRelease && y < directionRelease {
+			if centeredAt.IsZero() {
+				centeredAt = time.Now()
+			}
+			if time.Since(centeredAt) >= 100*time.Millisecond {
+				break
+			}
+		} else {
+			centeredAt = time.Time{}
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+	joy.Calibrate(300 * time.Millisecond)
+}
+
+func waitForRelease(joy *badge.Joystick, sw1, sw2 badge.Button) bool {
 	var centeredAt time.Time
 	for {
 		x, y, pressed := joy.Read()
@@ -156,26 +162,6 @@ func waitForRelease(joy *badge.Joystick, sw1 badge.Button) bool {
 	}
 }
 
-func drawMenu(display *st7789.Device, nav *navigation) {
-	display.FillScreen(launcherBlack)
-	launcherText(display, 23, "Examples", launcherWhite)
-	tinyfont.WriteLine(display, &tinyfont.TomThumb, 190, 19,
-		strconv.Itoa(nav.selected+1)+"/"+strconv.Itoa(len(programs)), launcherGray)
-	for row := 0; row < menuRows; row++ {
-		index := nav.first + row
-		if index >= len(programs) {
-			break
-		}
-		y := int16(34 + row*21)
-		if index == nav.selected {
-			display.FillRectangle(4, y, badge.LCD_WIDTH-8, 21, launcherBlue)
-		}
-		tinyfont.WriteLine(display, &freesans.Regular9pt7b, 12, y+16, programs[index].name, launcherWhite)
-	}
-	tinyfont.WriteLine(display, &tinyfont.TomThumb, 8, 216, "UP/DOWN: select", launcherGray)
-	tinyfont.WriteLine(display, &tinyfont.TomThumb, 8, 232, "SW1 / JOY press: start    LEFT: TOP", launcherGray)
-}
-
 func showProgram(display *st7789.Device, selected program) {
 	display.FillScreen(launcherBlack)
 	launcherText(display, 40, selected.name, launcherWhite)
@@ -184,29 +170,19 @@ func showProgram(display *st7789.Device, selected program) {
 	if selected.hint != "" {
 		launcherText(display, 165, selected.hint, launcherGray)
 	}
-	launcherText(display, 225, "LEFT: MENU", launcherWhite)
+	launcherText(display, 225, "SW1+SW2 1s: MENU", launcherWhite)
 }
 
 func launcherText(display *st7789.Device, y int16, text string, c color.RGBA) {
 	tinyfont.WriteLine(display, &freesans.Regular9pt7b, 8, y, text, c)
 }
 
-func watchMenu(joy *badge.Joystick, selected int) {
-	var leftAt time.Time
+func watchMenu(sw1, sw2 badge.Button, selected int) {
+	var gesture menuReturnGesture
 	for {
-		x, _, _ := joy.Read()
-		if x < -directionPress {
-			if leftAt.IsZero() {
-				leftAt = time.Now()
-			}
-			// Reject ADC noise and momentary bumps. Selftest can also sample
-			// the left direction before the reset (test LEFT last).
-			if time.Since(leftAt) >= 150*time.Millisecond {
-				println("all: returning to program menu")
-				resetToMenu(selected)
-			}
-		} else {
-			leftAt = time.Time{}
+		if gesture.update(time.Now(), sw1.Pressed(), sw2.Pressed()) {
+			println("all: returning to program menu")
+			resetToMenu(selected)
 		}
 		time.Sleep(10 * time.Millisecond)
 	}

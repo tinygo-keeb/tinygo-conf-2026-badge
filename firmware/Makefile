@@ -81,7 +81,7 @@ flash-all:
 	CGO_CFLAGS_ALLOW=-fno-short-enums tinygo flash --target esp32s3-box-3 --size short -ldflags="-X main.ssid=$(SSID) -X main.password=$(PASS)" ./examples/all
 
 check-all:
-	GO111MODULE=off go test ./examples/all/navigation.go ./examples/all/navigation_test.go
+	go test ./examples/all/navigation.go ./examples/all/navigation_test.go ./examples/all/menu.go ./examples/all/menu_test.go
 	cd examples/all && GO111MODULE=off go run generate.go -check
 
 build-slotgame:

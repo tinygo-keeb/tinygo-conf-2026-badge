@@ -48,7 +48,7 @@ CGO_CFLAGS_ALLOW=-fno-short-enums tinygo flash --target ./targets/esp32s3-box-3-
 | `flashstore/` | Settings storage that reads and writes 64 KB of SPI flash starting at 0x1F0000 through ROM functions |
 | `targets/` | Custom BLE target with an upstream TinyGo esp32s3.ld linker script |
 | `examples/blink` | Cycle the WS2812B LEDs through rainbow colors |
-| `examples/all` | Launcher for all 20 examples: logo on startup, SW1 opens the menu, joystick up/down selects, SW1 or joystick press starts, left returns from an example to the menu, and left in the menu returns to TOP. See [the launcher README](examples/all/README.md) for build commands and input changes. |
+| `examples/all` | Launcher for all 20 examples: logo on startup, SW1 opens the menu, joystick up/down selects, SW1 or joystick press starts, holding SW1+SW2 for one second returns from an example to the menu, and left in the menu returns to TOP. Menu movement uses buffered partial updates. See [the launcher README](examples/all/README.md) for build commands and controls. |
 | `examples/display` | Show color bars and text on the ST7789 |
 | `examples/input` | Print the SW1/SW2 and joystick states over serial |
 | `examples/joyraw` | Measure raw joystick values and movement limits (min/max) |
