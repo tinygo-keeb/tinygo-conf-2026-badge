@@ -1,58 +1,56 @@
-# tinygo-conf-2026
+# TinyGo Conf 2026 Badge
 
-TinyGo Conference 2026 向け開発ボード (devkit) の KiCad プロジェクトです。
-ESP32-S3-DevKit を中心に、ディスプレイ・オーディオ・入力デバイスなどを 1 枚の基板にまとめています。
+[English](README.en.md)
 
-## 主な搭載部品・機能
+TinyGo Conference 2026 向けバッジのハードウェア設計と TinyGo ファームウェアをまとめたリポジトリです。ESP32-S3-DevKit を中心に、ディスプレイ、入力デバイス、音声、赤外線、温湿度センサーなどを搭載しています。
 
-- **ESP32-S3-DevKit** — メインボード (ピンソケット経由で搭載)
-- **ST7789 ディスプレイ** — SPI 接続 (CS / DC / RES / SCL / DIN)、8 ピンコネクタ
-- **MAX98357 (Adafruit)** — I2S オーディオアンプ (BCLK / LRC / DIN) + スピーカー
-- **WS2812B × 4** — シリアル RGB LED
-- **アナログジョイスティック (ALPS RKJXV122400R)** — X / Y 軸 + プッシュボタン
-- **プッシュスイッチ × 2**
-- **赤外線 LED / 赤外線受信** — IR_LED / IR_DATA
-- **I2C コネクタ (4 ピン)** — 外部モジュール接続用 (Grove 互換フットプリントあり)
+## 主な機能
 
-## ファイル構成
+| 機能 | ハードウェア | ファームウェアの例 |
+| --- | --- | --- |
+| 表示 | ST7789 ディスプレイ | [`display`](firmware/examples/display)、[`demo`](firmware/examples/demo) |
+| 入力 | ジョイスティック、スイッチ × 2 | [`input`](firmware/examples/input)、[`rhythm`](firmware/examples/rhythm) |
+| 光と音 | RGB LED × 2、MAX98357 アンプとスピーカー | [`blink`](firmware/examples/blink)、[`audio`](firmware/examples/audio) |
+| センサー・拡張 | AHT21B 温湿度センサー、Grove 互換 I2C コネクタ | [`aht21b`](firmware/examples/aht21b)、[`i2cscan`](firmware/examples/i2cscan) |
+| 赤外線 | 赤外線 LED・受信モジュール | [`ir`](firmware/examples/ir)、[`irlearn`](firmware/examples/irlearn) |
+| 無線通信 | ESP32-S3 の Wi-Fi・BLE | [`wifi-server`](firmware/examples/wifi-server)、[`ble-sensor`](firmware/examples/ble-sensor) |
+
+全体の動作確認には [`selftest`](firmware/examples/selftest) を使えます。
+
+## 組み立て
+
+必要な部品と写真付きの組み立て手順は [ビルドガイド](hardware/build/build.md) を参照してください。
+
+## ドキュメントとファイル
 
 | パス | 内容 |
 | --- | --- |
-| `tinygo-conf-2026.kicad_pro` | KiCad プロジェクトファイル |
-| `tinygo-conf-2026.kicad_sch` | 回路図 |
-| `tinygo-conf-2026.kicad_pcb` | 基板レイアウト |
-| `tinygo-conf-2026-devkit_test2/` | 製造用ガーバー・ドリルデータ (試作 2 版) |
-| `lib/` | シンボル / フットプリントライブラリ (下記サブモジュール含む) |
-| `lib/sglib.kicad_sym`, `lib/sglib.pretty/` | 自作ライブラリ (ジョイスティック、Grove コネクタなど) |
-| `fp-lib-table`, `sym-lib-table` | プロジェクト用ライブラリテーブル |
+| [hardware/README.md](hardware/README.md) | 基板の構成、KiCad のセットアップ、製造データ |
+| [hardware/build/build.md](hardware/build/build.md) | 部品一覧と写真付きの組み立て手順 |
+| [hardware/tinygo-conf-2026.kicad_pro](hardware/tinygo-conf-2026.kicad_pro) | KiCad プロジェクト。回路図と基板レイアウトは同じディレクトリにあります |
+| [firmware/README.md](firmware/README.md) | ビルド・書き込み方法、サンプル一覧、ピン割り当て、実装上の注意点 |
+| [firmware/Makefile](firmware/Makefile) | サンプルのビルド確認や Wi-Fi サンプルの書き込み |
 
-## 必要環境
+## 使い始める
 
-- KiCad 9.0 以降
+### ハードウェア
 
-## セットアップ
-
-ライブラリの一部は git サブモジュールとして管理しています。
-クローン後に以下を実行してください。
+KiCad 9.0 以降を使用します。KiCad ライブラリの一部はサブモジュールなので、リポジトリのルートで取得してください。
 
 ```sh
-git clone --recursive <このリポジトリの URL>
-# すでにクローン済みの場合
 git submodule update --init --recursive
 ```
 
-その後 `tinygo-conf-2026.kicad_pro` を KiCad で開きます。
+[KiCad プロジェクト](hardware/tinygo-conf-2026.kicad_pro) を開き、バッジの組み立てには [組み立てガイド](hardware/build/build.md) を参照してください。
 
-### サブモジュール一覧
+### ファームウェア
 
-| パス | 用途 | 取得元 |
-| --- | --- | --- |
-| `lib/espressif` | ESP32 系シンボル | espressif/kicad-libraries |
-| `lib/kbd` | ESP32-S3-Devkit シンボルなど | foostan/kbd |
-| `lib/MAX98357` | MAX98357 アンプ | besi/kicad-adafruit-MAX98357 |
-| `lib/st7789` | ST7789 ディスプレイ | BennyLuca/Kicad_Components_Library |
-| `lib/sparkfun` | SparkFun ライブラリ | sparkfun/SparkFun-KiCad-Libraries |
+TinyGo を用意し、ESP32-S3-DevKit を接続して以下を実行します。
 
-## 製造データ
+```sh
+cd firmware
+tinygo flash --target esp32s3-box-3 --size short ./examples/blink
+tinygo monitor --target esp32s3-box-3
+```
 
-`tinygo-conf-2026-devkit_test2/` に 2 層基板のガーバーデータ (表裏の銅箔・レジスト・ペースト・シルク、外形、PTH/NPTH ドリル) 一式が出力済みです。
+全サンプルのビルド確認は `firmware/` で `make smoketest` を実行します。Wi-Fi・BLE の設定や各サンプルの使い方は [ファームウェアのREADME](firmware/README.md) を参照してください。
