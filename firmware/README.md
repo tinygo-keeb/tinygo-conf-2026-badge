@@ -1,5 +1,7 @@
 # firmware
 
+[English](README.en.md)
+
 TinyGo Conference 2026 バッジ (ESP32-S3-DevKit ベース) の TinyGo ファームウェア。
 
 ## ビルド・書き込み
