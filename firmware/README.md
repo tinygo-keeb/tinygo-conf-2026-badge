@@ -44,6 +44,12 @@ CGO_CFLAGS_ALLOW=-fno-short-enums tinygo flash --target ./targets/esp32s3-box-3-
 
 ## 構成
 
+全サンプルを選択して実行するには `make flash-all` を使う。
+`examples/all` は起動時にロゴを表示し、SW1で選択画面、Joystick上下で選択、
+SW1またはJoystick押し込みで起動する。実行中はSW1＋SW2を1秒同時長押しして選択画面へ戻り、
+選択画面でJoystick左に倒すとTOPへ戻る。
+Wi-Fi設定や統合版での入力の違いは [examples/all/README.md](examples/all/README.md) を参照。
+
 | パス | 内容 |
 | --- | --- |
 | `badge/` | ピン割り当てと各ペリフェラルの初期化ヘルパー |
@@ -53,6 +59,7 @@ CGO_CFLAGS_ALLOW=-fno-short-enums tinygo flash --target ./targets/esp32s3-box-3-
 | `flashstore/` | ROM 関数で SPI フラッシュの一部 (0x1F0000 から 64KB) を読み書きする設定保存用パッケージ |
 | `targets/` | BLE 用のカスタムターゲット (アップストリーム TinyGo の esp32s3.ld を同梱) |
 | `examples/blink` | WS2812B を虹色に点灯 |
+| `examples/all` | 全20サンプルの統合ランチャー。ロゴ画面、Joystickで選択、実行中はSW1＋SW2を1秒同時長押しで選択画面へ戻る |
 | `examples/display` | ST7789 にカラーバーと文字を表示 |
 | `examples/input` | SW1/SW2 とジョイスティックの状態をシリアル出力 |
 | `examples/joyraw` | ジョイスティックの生値と可動範囲 (min/max) を計測してシリアル出力 |
@@ -71,6 +78,7 @@ CGO_CFLAGS_ALLOW=-fno-short-enums tinygo flash --target ./targets/esp32s3-box-3-
 | `examples/audiotest` | I2S の動作確認用。診断出力を出したあと 1kHz の正弦波を鳴らし続ける |
 | `examples/demo` | 上記をまとめた全機能デモ |
 | `examples/rhythm` | 音ゲー。上から降ってくるノーツに合わせて 5 つのキー (ジョイスティックの左、上か下、右と SW2、SW1) を押す。BGM はその場で合成し、メロディの音の高さとレーンが対応している。コンボ数に応じて画面の演出が増える。EASY / NORMAL |
+| `examples/slotgame` | 3リールの目押しスロット。button_1（SW1）で開始し、押すたびに左 → 中央 → 右の順にリールを止める。[操作・ビルド方法](examples/slotgame/README.md) |
 | `examples/selftest` | 基板上の全デバイスを一度に動作確認するセルフテスト。ボタン、ジョイスティック上下左右、AHT21B、赤外線の自己受信、I2S を自動判定し、すべて済むと ALL OK。LCD、LED、スピーカー、Grove は画面の表示と音で目視確認 |
 
 ## ピン割り当て

@@ -48,6 +48,7 @@ CGO_CFLAGS_ALLOW=-fno-short-enums tinygo flash --target ./targets/esp32s3-box-3-
 | `flashstore/` | Settings storage that reads and writes 64 KB of SPI flash starting at 0x1F0000 through ROM functions |
 | `targets/` | Custom BLE target with an upstream TinyGo esp32s3.ld linker script |
 | `examples/blink` | Cycle the WS2812B LEDs through rainbow colors |
+| `examples/all` | Launcher for all 20 examples: logo on startup, SW1 opens the menu, joystick up/down selects, SW1 or joystick press starts, holding SW1+SW2 for one second returns from an example to the menu, and left in the menu returns to TOP. Menu movement uses buffered partial updates. See [the launcher README](examples/all/README.md) for build commands and controls. |
 | `examples/display` | Show color bars and text on the ST7789 |
 | `examples/input` | Print the SW1/SW2 and joystick states over serial |
 | `examples/joyraw` | Measure raw joystick values and movement limits (min/max) |
@@ -66,6 +67,7 @@ CGO_CFLAGS_ALLOW=-fno-short-enums tinygo flash --target ./targets/esp32s3-box-3-
 | `examples/audiotest` | Print I2S diagnostics and continuously play a 1 kHz sine wave |
 | `examples/demo` | Full-feature demo combining the features above |
 | `examples/rhythm` | Rhythm game: press five controls (joystick left, up or down, right, SW2, and SW1) as notes fall. The BGM is synthesized live; pitch corresponds to lane, and effects grow with the combo. EASY / NORMAL modes |
+| `examples/slotgame` | Three-reel slot game controlled entirely with button_1 (SW1). Press to start, then press again to stop each reel from left to right. See [the game README](examples/slotgame/README.md) for controls and build commands. |
 | `examples/selftest` | Check all onboard devices together. Buttons, joystick directions, AHT21B, infrared loopback, and I2S are checked automatically; the display shows ALL OK when complete. Check the LCD, LEDs, speaker, and Grove by sight or sound |
 
 ## Pin assignments
