@@ -27,6 +27,7 @@ TinyGo Conference 2026 向けバッジのハードウェア設計と TinyGo フ�
 | --- | --- |
 | [hardware/README.md](hardware/README.md) | 基板の構成、KiCad のセットアップ、製造データ |
 | [hardware/build/build.md](hardware/build/build.md) | 部品一覧と写真付きの組み立て手順 |
+| [conf2026badge case](https://makerworld.com/models/3438451) | 3D プリント用のケースデータ (MakerWorld) |
 | [hardware/tinygo-conf-2026.kicad_pro](hardware/tinygo-conf-2026.kicad_pro) | KiCad プロジェクト。回路図と基板レイアウトは同じディレクトリにあります |
 | [firmware/README.md](firmware/README.md) | ビルド・書き込み方法、サンプル一覧、ピン割り当て、実装上の注意点 |
 | [firmware/Makefile](firmware/Makefile) | サンプルのビルド確認や Wi-Fi サンプルの書き込み |
