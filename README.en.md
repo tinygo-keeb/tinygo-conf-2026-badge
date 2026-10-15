@@ -27,6 +27,7 @@ See the [build guide](hardware/build/build.en.md) for the parts list and illustr
 | --- | --- |
 | [hardware/README.en.md](hardware/README.en.md) | Board design, KiCad setup, and manufacturing files |
 | [hardware/build/build.en.md](hardware/build/build.en.md) | Parts list and illustrated assembly guide |
+| [conf2026badge case](https://makerworld.com/models/3438451) | 3D-printable case files (MakerWorld) |
 | [hardware/tinygo-conf-2026.kicad_pro](hardware/tinygo-conf-2026.kicad_pro) | KiCad project; the schematic and PCB layout are in the same directory |
 | [firmware/README.en.md](firmware/README.en.md) | Build and flashing instructions, examples, pin assignments, and implementation notes |
 | [firmware/Makefile](firmware/Makefile) | Example build checks and Wi-Fi example flash targets |
